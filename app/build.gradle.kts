@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "cz.foxxo.fafeed"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "cz.foxxo.fafeed"
@@ -44,25 +44,25 @@ kotlin {
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.documentfile:documentfile:1.0.1")
-    implementation("androidx.activity:activity-compose:1.13.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+    implementation("androidx.activity:activity-compose:1.10.1")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
 
-    implementation(platform("androidx.compose:compose-bom:2026.03.01"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.ui:ui:1.10.6")
+    implementation("androidx.compose.ui:ui-graphics:1.10.6")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.10.6")
+    implementation("androidx.compose.foundation:foundation:1.10.6")
+    implementation("androidx.compose.material3:material3:1.4.0")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
-    debugImplementation("androidx.compose.ui:ui-tooling")
+    debugImplementation("androidx.compose.ui:ui-tooling:1.10.6")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
-    implementation("com.squareup.okhttp3:okhttp:5.5.1")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jsoup:jsoup:1.23.2")
 
-    implementation("io.coil-kt.coil3:coil-compose:3.6.3")
-    implementation("io.coil-kt.coil3:coil-network-okhttp:3.6.3")
+    implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jsoup:jsoup:1.23.2")

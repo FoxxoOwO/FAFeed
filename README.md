@@ -56,11 +56,17 @@ Parsování stojí na marku FA: `figure[id^=sid-]` s `figcaption`, rating v clas
 ## Build
 
 ```bash
-gradle :app:assembleDebug     # JDK 17+, AGP 9.4.1, Gradle 9.7.1, compileSdk 37
-gradle :app:testDebugUnitTest # 7 testů parseru (vč. reálné FA stránky)
+./gradlew :app:assembleDebug      # JDK 17+, AGP 9.4.1, Gradle 9.7.1, compileSdk 36
+./gradlew :app:testDebugUnitTest  # 7 testů parseru (vč. reálné FA stránky)
 ```
 
-`local.properties` musí ukazovat na Android SDK (`sdk.dir=...`).
+`local.properties` s `sdk.dir=...` použij lokálně; v CI stačí `ANDROID_HOME`.
+
+## CI
+
+GitHub Actions (`.github/workflows/android.yml`) při každém pushi do `main`, PR a ručním
+spuštění spustí unit testy, sestaví debug APK a nahraje ho jako artifact
+`FAFeed-debug-apk`. Když pushneš tag `v*`, APK se přiloží i k GitHub Release.
 
 ## Omezení
 
