@@ -160,6 +160,42 @@ class FaParserTest {
     }
 
     @Test
+    fun `watchlist page yields usernames and the next page`() {
+        val html = """
+            <html><head><title>Fur Affinity</title></head><body>
+            <div class="section-body watch-list">
+              <div class="watch-list-items watch-row inline">
+                ~<span class="c-usernameBlockSimple"><a href="/user/-Riska-/" target="_blank">-Riska-</a></span>
+              </div>
+              <div class="watch-list-items watch-row new-section inline">
+                ~<span class="c-usernameBlockSimple"><a href="/user/Aimi/" target="_blank">Aimi</a></span>
+              </div>
+              <div class="watch-list-items watch-row inline">
+                ~<span class="c-usernameBlockSimple"><a href="/user/akulaenaya/" target="_blank">Akulaenaya</a></span>
+              </div>
+            </div>
+            <div class="mini-nav"><a href="/watchlist/by/foxxoowo/2/" rel="next">Next</a></div>
+            </body></html>
+        """.trimIndent()
+
+        val page = FaParser.parseWatchlist(html, "https://www.furaffinity.net/watchlist/by/foxxoowo/")
+
+        assertEquals(listOf("-riska-", "aimi", "akulaenaya"), page.users)
+        assertEquals("https://www.furaffinity.net/watchlist/by/foxxoowo/2/", page.nextUrl)
+    }
+
+    @Test
+    fun `gallery page figures are parsed for the watchlist scan`() {
+        val stream = javaClass.classLoader!!.getResourceAsStream("fa_browse_real.html") ?: error("fixture missing")
+        val html = stream.use { it.readBytes().toString(Charsets.UTF_8) }
+
+        val items = FaParser.parseFigures(html, "https://www.furaffinity.net/gallery/foo/")
+
+        assertTrue(items.size >= 40)
+        assertEquals(items.map { it.id }.sortedDescending(), items.map { it.id })
+    }
+
+    @Test
     fun `empty feed reports no next page`() {
         val page = FaParser.parseFeed("<html><body></body></html>", "https://www.furaffinity.net/")
         assertNull(page.nextUrl)

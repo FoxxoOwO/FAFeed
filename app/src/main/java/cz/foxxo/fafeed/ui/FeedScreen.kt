@@ -84,6 +84,7 @@ fun FeedScreen(
             state = state,
             onSafeOnly = vm::setSafeOnly,
             onBlurNsfw = vm::setBlurNsfw,
+            onSyncAll = vm::syncAll,
             onLogout = onLogout,
             onDismiss = { settingsOpen = false },
         )
@@ -104,8 +105,14 @@ fun FeedScreen(
                                 fontWeight = FontWeight.Bold,
                             )
                         }
-                        if (state.user.isNotBlank()) {
-                            Text(
+                        when {
+                            state.refreshing && state.progressTotal > 0 -> Text(
+                                "Synchronizuji ${state.progressDone}/${state.progressTotal}…",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+
+                            state.user.isNotBlank() -> Text(
                                 "@${state.user}",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -124,14 +131,16 @@ fun FeedScreen(
             )
         },
     ) { padding ->
-        val shouldLoadMore by remember(state.items.size) {
+        val shouldLoadMore by remember(state.visibleCount, state.visibleItems.size) {
             derivedStateOf {
                 val info = listState.layoutInfo
                 val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: -1
                 info.totalItemsCount > 0 && lastVisible >= info.totalItemsCount - 3
             }
         }
-        LaunchedEffect(shouldLoadMore) { if (shouldLoadMore) vm.loadMore() }
+        LaunchedEffect(shouldLoadMore, state.visibleCount) {
+            if (shouldLoadMore && state.hasMore) vm.loadMore()
+        }
 
         PullToRefreshBox(
             isRefreshing = state.refreshing,
@@ -148,7 +157,11 @@ fun FeedScreen(
                 state.visibleItems.isEmpty() -> CenterBox {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            state.error ?: "Feed je prázdný",
+                            state.error ?: if (state.followedCount > 0) {
+                                "Sleduješ ${state.followedCount} lidí, ale zatím se nic nenačetlo – klepni na Zkusit znovu."
+                            } else {
+                                "Zatím neznám tvůj watchlist – přihlas se a nech feed synchronizovat."
+                            },
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 32.dp),
@@ -193,8 +206,8 @@ fun FeedScreen(
                                 .padding(vertical = 18.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            when {
-                                state.loadingMore -> Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (state.hasMore) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(18.dp),
                                         strokeWidth = 2.dp,
@@ -202,16 +215,12 @@ fun FeedScreen(
                                     Spacer(Modifier.width(10.dp))
                                     Text("Načítám další…", style = MaterialTheme.typography.bodySmall)
                                 }
-
-                                state.endReached -> Text(
-                                    "Konec feedu",
+                            } else {
+                                Text(
+                                    "Konec feedu • ${state.totalShown} příspěvků od ${state.followedCount} sledovaných",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-
-                                else -> Text(
-                                    " ",
-                                    style = MaterialTheme.typography.bodySmall,
+                                    textAlign = TextAlign.Center,
                                 )
                             }
                         }

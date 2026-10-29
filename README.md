@@ -6,11 +6,18 @@ scrollováním.
 
 ## Co umí
 
-- **Feed od sledovaných** – čte `https://www.furaffinity.net/msg/submissions/`, tedy
-  frontu „New submissions“ = jen posty od lidí, které sleduješ (ověřeno: 100 % autorů
-  je ve watchlistu). Frontpage `/` se nepoužívá, protože míchá celý web. Řazeno od
-  nejnovějších, při scrollování se dotahují starší stránky přes odkaz „Next N“.
-  Pozor: FA maže notifikace starší 6 měsíců, hloubka feedu je tedy daná tímhle oknem.
+- **Feed od sledovaných** – nestojí na notifikacích, ale na samotném watchlistu:
+  appka si načte seznam sledovaných (`/watchlist/by/{user}/`) a u každého si přečte
+  první stránku galerie (`/gallery/{user}/`). Nové příspěvky pozná podle kurzoru
+  (nejvyšší známé submission id), takže se nic neduplikuje.
+  - Notifikační fronta `/msg/submissions/` se používá jen jako rychlá vložka, když
+    v ní něco je – **vyčištění notifikací už feed nevymaže** (ověřeno: 240 z 312
+    příspěvků přišlo z galerií, ne z notifikací).
+  - Běžná synchronizace projde rotující dávku 60 sledovaných (~20 s), takže se celý
+    watchlist protočí během několika obnovení. V Nastavení je i „Synchronizovat celý
+    watchlist“ (269 účtů, ~90 s, ověřeno 269/269).
+  - Feed se ukládá lokálně (do 800 příspěvků), takže po startu je hned vidět a řadí se
+    od nejnovějších bez ohledu na to, co FA zrovna má v notifikacích.
 - **Přihlášení** – ve WebView (Cloudflare Turnstile i případné 2FA zvládne prohlížeč).
   Cookies `a` + `b` (a `cf_clearance`) se uloží a posílají se dál jako hlavička `Cookie`.
 - **Karta postu** – avatar autora, jméno, rating (GENERAL / MATURE / ADULT), náhled
@@ -37,6 +44,8 @@ app/src/main/java/cz/foxxo/fafeed/
 ├── data/
 │   ├── FaParser.kt       # jsoup parser FA "beta" layoutu (bez Android závislostí)
 │   ├── FaClient.kt       # OkHttp + cookies
+│   ├── FeedRepository.kt # synchronizace watchlistu (galerie + kurzory + rotace)
+│   ├── FeedStore.kt      # lokální store, JSON serializace, merge/planner helpery
 │   ├── Models.kt         # FeedItem, FeedPage, SubmissionDetail
 │   └── Prefs.kt          # cookies, uživatel, přepínače, cache
 └── ui/
@@ -57,7 +66,7 @@ Parsování stojí na marku FA: `figure[id^=sid-]` s `figcaption`, rating v clas
 
 ```bash
 ./gradlew :app:assembleDebug      # JDK 17+, AGP 9.4.1, Gradle 9.7.1, compileSdk 36
-./gradlew :app:testDebugUnitTest  # 7 testů parseru (vč. reálné FA stránky)
+./gradlew :app:testDebugUnitTest  # 15 testů: parser + logika watchlist feedu
 ```
 
 `local.properties` s `sdk.dir=...` použij lokálně; v CI stačí `ANDROID_HOME`.

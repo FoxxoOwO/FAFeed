@@ -46,6 +46,7 @@ fun SettingsSheet(
     state: FeedState,
     onSafeOnly: (Boolean) -> Unit,
     onBlurNsfw: (Boolean) -> Unit,
+    onSyncAll: () -> Unit,
     onLogout: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -99,6 +100,42 @@ fun SettingsSheet(
                 subtitle = "Obsah se zobrazí až po klepnutí",
                 checked = state.blurNsfw,
                 onChange = onBlurNsfw,
+            )
+
+            Spacer(Modifier.height(10.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(14.dp))
+
+            Text("Watchlist", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                buildString {
+                    append(state.followedCount)
+                    append(" sledovaných")
+                    if (state.lastSyncAt > 0) {
+                        append(" • sync ")
+                        append(java.time.Instant.ofEpochMilli(state.lastSyncAt)
+                            .atZone(java.time.ZoneId.systemDefault())
+                            .format(java.time.format.DateTimeFormatter.ofPattern("d. M. HH:mm")))
+                    }
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (state.refreshing) {
+                Text(
+                    "Synchronizuji ${state.progressDone}/${state.progressTotal}…",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            TextButton(onClick = onSyncAll, enabled = !state.refreshing) {
+                Text("Synchronizovat celý watchlist")
+            }
+            Text(
+                "Běžná synchronizace prochází watchlist po dávkách, tohle projde všechny najednou.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Spacer(Modifier.height(10.dp))

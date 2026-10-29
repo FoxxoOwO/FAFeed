@@ -71,6 +71,44 @@ object FaParser {
         )
     }
 
+    /** All submission cards on a page (gallery, scraps, msg list, front page...). */
+    fun parseFigures(html: String, pageUrl: String): List<FeedItem> =
+        Jsoup.parse(html, pageUrl)
+            .select("figure[id^=sid-]")
+            .mapNotNull { parseFigure(it) }
+            .distinctBy { it.id }
+
+    /**
+     * Watchlist page -> usernames + next page url.
+     * Markup: <div class="watch-list-items ..."><span class="c-usernameBlockSimple"><a href="/user/name/">
+     */
+    fun parseWatchlist(html: String, pageUrl: String): WatchlistPage {
+        val doc = Jsoup.parse(html, pageUrl)
+        if (doc.title().contains("Login Required", ignoreCase = true)) throw FaAuthException()
+
+        val users = LinkedHashSet<String>()
+        for (block in doc.select("div.watch-list-items")) {
+            val href = block.selectFirst("a[href^=/user/]")?.attr("href") ?: continue
+            users += href.removePrefix("/user/").trim('/').lowercase()
+        }
+        if (users.isEmpty()) {
+            for (link in doc.select("a[href^=/user/]")) {
+                val name = link.attr("href").removePrefix("/user/").trim('/')
+                if (name.isNotEmpty() && !name.contains("/")) users += name.lowercase()
+            }
+        }
+
+        val next = doc.selectFirst("div.mini-nav a[href*=/watchlist/], a[href*=/watchlist/by/][rel=next]")
+            ?.attr("href")
+            ?.let { resolve(pageUrl, it) }
+            ?: doc.select("a[href*=/watchlist/by/]")
+                .firstOrNull { it.text().contains("next", ignoreCase = true) }
+                ?.attr("href")
+                ?.let { resolve(pageUrl, it) }
+
+        return WatchlistPage(users.toList(), next)
+    }
+
     fun parseSubmission(html: String, pageUrl: String): SubmissionDetail {
         val doc = Jsoup.parse(html, pageUrl)
         if (doc.title().contains("Login Required", ignoreCase = true)) {

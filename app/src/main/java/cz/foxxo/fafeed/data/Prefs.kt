@@ -33,7 +33,29 @@ class Prefs(context: Context) {
         get() = sp.getString("download_tree_name", "").orEmpty()
         set(value) = sp.edit().putString("download_tree_name", value).apply()
 
+    var watchUsers: String
+        get() = sp.getString("watch_users", "").orEmpty()
+        set(value) = sp.edit().putString("watch_users", value).apply()
+
+    var scanState: String
+        get() = sp.getString("scan_state", "").orEmpty()
+        set(value) = sp.edit().putString("scan_state", value).apply()
+
+    var scanIndex: Int
+        get() = sp.getInt("scan_index", 0)
+        set(value) = sp.edit().putInt("scan_index", value).apply()
+
+    var lastSyncAt: Long
+        get() = sp.getLong("last_sync_at", 0L)
+        set(value) = sp.edit().putLong("last_sync_at", value).apply()
+
+    var usersFetchedAt: Long
+        get() = sp.getLong("users_fetched_at", 0L)
+        set(value) = sp.edit().putLong("users_fetched_at", value).apply()
+
     fun clearSession() {
-        sp.edit().remove("cookies").remove("user").remove("cached_feed_v2").apply()
+        sp.edit().remove("cookies").remove("user").remove("cached_feed_v2")
+            .remove("watch_users").remove("scan_state").remove("scan_index")
+            .remove("last_sync_at").remove("users_fetched_at").apply()
     }
 }

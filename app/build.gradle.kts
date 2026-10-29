@@ -65,5 +65,6 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
     testImplementation("org.jsoup:jsoup:1.23.2")
 }

@@ -21,6 +21,8 @@ data class FeedItem(
     val isNsfw: Boolean get() = rating == "adult" || rating == "mature"
 }
 
+data class WatchlistPage(val users: List<String>, val nextUrl: String?)
+
 data class FeedPage(
     val items: List<FeedItem>,
     val nextUrl: String?,
