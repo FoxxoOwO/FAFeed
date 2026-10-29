@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Visibility
@@ -40,6 +41,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,6 +49,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +64,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.launch
 import cz.foxxo.fafeed.data.FaParser
 import cz.foxxo.fafeed.data.FeedItem
 import cz.foxxo.fafeed.ui.theme.ratingColor
@@ -76,7 +80,15 @@ fun FeedScreen(
 ) {
     val state = vm.state
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var settingsOpen by remember { mutableStateOf(false) }
+
+    // Shows up once you scroll back up after reading further down the feed.
+    val showJumpToTop by remember(listState) {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 2 && listState.lastScrolledBackward
+        }
+    }
 
     LaunchedEffect(Unit) { vm.start() }
 
@@ -92,6 +104,17 @@ fun FeedScreen(
     }
 
     Scaffold(
+        floatingActionButton = {
+            if (showJumpToTop) {
+                FloatingActionButton(
+                    onClick = { scope.launch { listState.animateScrollToItem(0) } },
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                ) {
+                    Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "Nahoru na začátek")
+                }
+            }
+        },
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
