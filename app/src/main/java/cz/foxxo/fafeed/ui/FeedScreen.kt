@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -71,10 +72,10 @@ fun FeedScreen(
     vm: FeedViewModel,
     onOpenSubmission: (Long) -> Unit,
     onLogout: () -> Unit,
+    listState: LazyListState = rememberLazyListState(),
 ) {
     val state = vm.state
     val context = LocalContext.current
-    val listState = rememberLazyListState()
     var settingsOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { vm.start() }

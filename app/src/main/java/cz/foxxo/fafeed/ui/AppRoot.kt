@@ -2,6 +2,8 @@ package cz.foxxo.fafeed.ui
 
 import android.webkit.CookieManager
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +21,8 @@ fun AppRoot() {
     val prefs = remember { Prefs(context) }
     var loggedIn by remember { mutableStateOf(prefs.cookies.isNotBlank()) }
     var detailId by rememberSaveable { mutableStateOf<Long?>(null) }
+    // Kept here (not in FeedScreen) so the feed keeps its scroll position while a post is open.
+    val feedListState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
 
     when {
         !loggedIn || vm.sessionExpired -> LoginScreen(
@@ -36,6 +40,7 @@ fun AppRoot() {
 
         else -> FeedScreen(
             vm = vm,
+            listState = feedListState,
             onOpenSubmission = { detailId = it },
             onLogout = {
                 runCatching {
