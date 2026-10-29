@@ -1,5 +1,11 @@
 package cz.foxxo.fafeed.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -106,35 +112,48 @@ fun DetailScreen(id: Long, onBack: () -> Unit) {
             )
         },
     ) { padding ->
-        when {
-            loading -> Box(
-                Modifier
-                    .padding(padding)
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) { CircularProgressIndicator() }
+        AnimatedContent(
+            targetState = when {
+                loading -> "loading"
+                detail == null -> "error"
+                else -> "content"
+            },
+            transitionSpec = {
+                (slideInVertically(tween(260)) { it / 25 } + fadeIn(tween(220))) togetherWith
+                    fadeOut(tween(140))
+            },
+            label = "detailState",
+        ) { phase ->
+            when (phase) {
+                "loading" -> Box(
+                    Modifier
+                        .padding(padding)
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) { CircularProgressIndicator() }
 
-            detail == null -> Box(
-                Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-                    .padding(24.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    error ?: "Příspěvek se nepodařilo načíst",
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                "error" -> Box(
+                    Modifier
+                        .padding(padding)
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        error ?: "Příspěvek se nepodařilo načíst",
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                else -> DetailContent(
+                    detail = detail!!,
+                    cookies = prefs.cookies,
+                    client = client,
+                    downloadTreeUri = prefs.downloadTreeUri,
+                    modifier = Modifier.padding(padding),
                 )
             }
-
-            else -> DetailContent(
-                detail = detail!!,
-                cookies = prefs.cookies,
-                client = client,
-                downloadTreeUri = prefs.downloadTreeUri,
-                modifier = Modifier.padding(padding),
-            )
         }
     }
 }

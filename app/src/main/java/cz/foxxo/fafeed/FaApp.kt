@@ -42,6 +42,6 @@ class FaApp : Application(), SingletonImageLoader.Factory {
             .components {
                 add(OkHttpNetworkFetcherFactory(callFactory = { imageClient }))
             }
-            .crossfade(true)
+            .crossfade(220)
             .build()
 }

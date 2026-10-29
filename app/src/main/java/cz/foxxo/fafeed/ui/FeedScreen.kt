@@ -1,5 +1,22 @@
 package cz.foxxo.fafeed.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.material3.ripple
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -105,7 +122,11 @@ fun FeedScreen(
 
     Scaffold(
         floatingActionButton = {
-            if (showJumpToTop) {
+            AnimatedVisibility(
+                visible = showJumpToTop,
+                enter = scaleIn(initialScale = 0.5f, animationSpec = tween(220)) + fadeIn(tween(180)),
+                exit = scaleOut(targetScale = 0.5f, animationSpec = tween(160)) + fadeOut(tween(140)),
+            ) {
                 FloatingActionButton(
                     onClick = { scope.launch { listState.animateScrollToItem(0) } },
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -129,17 +150,26 @@ fun FeedScreen(
                                 fontWeight = FontWeight.Bold,
                             )
                         }
-                        when {
-                            state.refreshing && state.progressTotal > 0 -> Text(
-                                "Synchronizuji ${state.progressDone}/${state.progressTotal}…",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
+                        val subtitle = when {
+                            state.refreshing && state.progressTotal > 0 ->
+                                "Synchronizuji ${state.progressDone}/${state.progressTotal}…"
 
-                            state.user.isNotBlank() -> Text(
-                                "@${state.user}",
+                            state.user.isNotBlank() -> "@${state.user}"
+                            else -> ""
+                        }
+                        AnimatedContent(
+                            targetState = subtitle,
+                            transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(120)) },
+                            label = "subtitle",
+                        ) { text ->
+                            Text(
+                                text,
                                 style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = if (text.startsWith("Synchronizuji")) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
                             )
                         }
                     }
@@ -220,6 +250,7 @@ fun FeedScreen(
                             item = item,
                             blurNsfw = state.blurNsfw,
                             onOpen = { onOpenSubmission(item.id) },
+                            modifier = Modifier.animateItem(),
                         )
                     }
 
@@ -268,18 +299,38 @@ fun FeedCard(
     item: FeedItem,
     blurNsfw: Boolean,
     onOpen: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     var revealed by remember(item.id) { mutableStateOf(!item.isNsfw || !blurNsfw) }
+
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (pressed) 0.975f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        ),
+        label = "cardPress",
+    )
 
     Surface(
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            }
             .clip(RoundedCornerShape(18.dp))
-            .clickable(onClick = onOpen),
+            .clickable(
+                interactionSource = interaction,
+                indication = ripple(),
+                onClick = onOpen,
+            ),
     ) {
         Column {
             Row(
@@ -322,20 +373,32 @@ fun FeedCard(
                     .aspectRatio(item.aspectRatio)
                     .background(MaterialTheme.colorScheme.surfaceVariant),
             ) {
+                val blurRadius: Dp by animateDpAsState(
+                    targetValue = if (revealed) 0.dp else 30.dp,
+                    animationSpec = tween(340),
+                    label = "nsfwBlur",
+                )
+                val veil by animateFloatAsState(
+                    targetValue = if (revealed) 0f else 1f,
+                    animationSpec = tween(300),
+                    label = "nsfwVeil",
+                )
+
                 AsyncImage(
                     model = item.thumbUrl,
                     contentDescription = item.title,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .fillMaxSize()
-                        .then(if (!revealed) Modifier.blur(30.dp) else Modifier),
+                        .blur(blurRadius),
                 )
-                if (!revealed) {
+                if (veil > 0.01f) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
+                            .graphicsLayer { alpha = veil }
                             .background(Color.Black.copy(alpha = 0.35f))
-                            .clickable { revealed = true },
+                            .clickable(enabled = !revealed) { revealed = true },
                         contentAlignment = Alignment.Center,
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
