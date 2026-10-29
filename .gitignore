@@ -9,3 +9,4 @@ captures/
 .externalNativeBuild/
 .cxx/
 build_app.bat
+build_app2.bat
