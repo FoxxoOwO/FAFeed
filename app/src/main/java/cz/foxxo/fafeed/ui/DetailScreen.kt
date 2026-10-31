@@ -59,6 +59,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import android.widget.Toast
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import cz.foxxo.fafeed.R
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import cz.foxxo.fafeed.data.FaClient
@@ -74,6 +76,7 @@ fun DetailScreen(id: Long, onBack: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { Prefs(context) }
     val client = remember { FaClient { prefs.cookies } }
+    val loadFailedMsg = stringResource(R.string.load_failed)
 
     var detail by remember(id) { mutableStateOf<SubmissionDetail?>(null) }
     var error by remember(id) { mutableStateOf<String?>(null) }
@@ -83,7 +86,7 @@ fun DetailScreen(id: Long, onBack: () -> Unit) {
         loading = true
         runCatching { client.submission(id) }
             .onSuccess { detail = it }
-            .onFailure { error = it.message ?: "Načtení selhalo" }
+            .onFailure { error = it.message ?: loadFailedMsg }
         loading = false
     }
 
@@ -95,18 +98,18 @@ fun DetailScreen(id: Long, onBack: () -> Unit) {
                 ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Zpět")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 title = {
                     Text(
-                        detail?.authorDisplay ?: "Příspěvek",
+                        detail?.authorDisplay ?: stringResource(R.string.submission),
                         maxLines = 1,
                     )
                 },
                 actions = {
                     IconButton(onClick = { openInBrowser(context, "https://www.furaffinity.net/view/$id/") }) {
-                        Icon(Icons.AutoMirrored.Rounded.OpenInNew, contentDescription = "Otevřít na FA")
+                        Icon(Icons.AutoMirrored.Rounded.OpenInNew, contentDescription = stringResource(R.string.open_on_fa_short))
                     }
                 },
             )
@@ -140,7 +143,7 @@ fun DetailScreen(id: Long, onBack: () -> Unit) {
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        error ?: "Příspěvek se nepodařilo načíst",
+                        error ?: stringResource(R.string.detail_error),
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -215,7 +218,7 @@ private fun DetailContent(
                 )
                 Spacer(Modifier.width(4.dp))
                 Text(
-                    "Přiblížit",
+                    stringResource(R.string.zoom_in),
                     color = Color.White,
                     style = MaterialTheme.typography.labelSmall,
                 )
@@ -224,7 +227,7 @@ private fun DetailContent(
 
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                detail.title.ifBlank { "(bez názvu)" },
+                detail.title.ifBlank { stringResource(R.string.untitled) },
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
             )
@@ -262,12 +265,16 @@ private fun DetailContent(
             Spacer(Modifier.height(14.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                Stat("Zobrazení", detail.views)
-                Stat("Oblíbené", detail.favorites)
-                Stat("Komentáře", detail.comments)
+                Stat(stringResource(R.string.views), detail.views)
+                Stat(stringResource(R.string.favorites), detail.favorites)
+                Stat(stringResource(R.string.comments), detail.comments)
             }
 
             Spacer(Modifier.height(18.dp))
+
+            val downloadFailedMsg = stringResource(R.string.download_failed)
+            val savingToDownloadsMsg = stringResource(R.string.downloading_to_downloads)
+            val savedPrefix = stringResource(R.string.saved_as, "")
 
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Button(
@@ -285,11 +292,11 @@ private fun DetailContent(
                             )
                             saving = false
                             val message = when {
-                                !ok -> "Stažení selhalo"
-                                downloadTreeUri.isBlank() -> "Stahuji do Stahování/FAFeed"
+                                !ok -> downloadFailedMsg
+                                downloadTreeUri.isBlank() -> savingToDownloadsMsg
                                 else -> {
                                     val label = fileNameFor(detail.imageUrl, "fa_${detail.id}.jpg")
-                                    "Uloženo: $label"
+                                    savedPrefix + label
                                 }
                             }
                             Toast.makeText(context, message, Toast.LENGTH_LONG).show()
@@ -304,7 +311,7 @@ private fun DetailContent(
                         Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(18.dp))
                     }
                     Spacer(Modifier.width(8.dp))
-                    Text(if (saving) "Stahuji…" else "Stáhnout")
+                    Text(stringResource(if (saving) R.string.downloading else R.string.download))
                 }
                 OutlinedButton(
                     onClick = { openInBrowser(context, detail.viewUrl) },
@@ -312,7 +319,7 @@ private fun DetailContent(
                 ) {
                     Icon(Icons.AutoMirrored.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Na FA")
+                    Text(stringResource(R.string.open_on_fa_short))
                 }
             }
 

@@ -30,6 +30,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import cz.foxxo.fafeed.R
 import androidx.compose.ui.unit.dp
 import cz.foxxo.fafeed.data.FaClient
 import cz.foxxo.fafeed.data.FaParser
@@ -38,11 +41,14 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(onLoggedIn: (cookies: String, user: String) -> Unit) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var webView by remember { mutableStateOf<WebView?>(null) }
     var checking by remember { mutableStateOf(false) }
+    val notYetMsg = stringResource(R.string.login_not_yet)
+    val verifyFailedMsg = stringResource(R.string.login_verify_failed)
 
     fun readCookies(): String {
         val manager = CookieManager.getInstance()
@@ -52,7 +58,7 @@ fun LoginScreen(onLoggedIn: (cookies: String, user: String) -> Unit) {
 
     fun verify(cookies: String) {
         if (busy || cookies.isBlank() || !cookies.contains("b=")) {
-            message = "Ještě nejsi přihlášený – dokonči přihlášení na FurAffinity."
+            message = notYetMsg
             return
         }
         busy = true
@@ -63,7 +69,7 @@ fun LoginScreen(onLoggedIn: (cookies: String, user: String) -> Unit) {
             if (user != null) {
                 onLoggedIn(cookies, user)
             } else {
-                message = "Přihlášení se nepodařilo ověřit. Zkus to znovu."
+                message = verifyFailedMsg
             }
         }
     }
@@ -80,9 +86,9 @@ fun LoginScreen(onLoggedIn: (cookies: String, user: String) -> Unit) {
                 ),
                 title = {
                     Column {
-                        Text("Přihlášení", style = MaterialTheme.typography.titleLarge)
+                        Text(stringResource(R.string.login_title), style = MaterialTheme.typography.titleLarge)
                         Text(
-                            "Přihlas se na FurAffinity – appka pak čte tvůj feed sledovaných.",
+                            stringResource(R.string.login_subtitle),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -93,7 +99,7 @@ fun LoginScreen(onLoggedIn: (cookies: String, user: String) -> Unit) {
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { verify(readCookies()) },
-                text = { Text(if (busy) "Ověřuji…" else "Jsem přihlášený") },
+                text = { Text(stringResource(if (busy) R.string.verifying else R.string.im_signed_in)) },
                 icon = {
                     if (busy) {
                         CircularProgressIndicator(

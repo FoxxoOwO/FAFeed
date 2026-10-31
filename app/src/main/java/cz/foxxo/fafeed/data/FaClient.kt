@@ -39,7 +39,7 @@ class FaClient(private val cookiesProvider: () -> String) {
             if (!response.isSuccessful) {
                 throw IOException("HTTP ${response.code} – ${url}")
             }
-            response.body?.string() ?: throw IOException("Prázdná odpověď")
+            response.body?.string() ?: throw IOException("Empty response")
         }
     }
 
@@ -48,7 +48,7 @@ class FaClient(private val cookiesProvider: () -> String) {
             if (!response.isSuccessful) {
                 throw IOException("HTTP ${response.code} – $url")
             }
-            response.body?.bytes() ?: throw IOException("Prázdná odpověď")
+            response.body?.bytes() ?: throw IOException("Empty response")
         }
     }
 

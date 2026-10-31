@@ -1,5 +1,6 @@
 package cz.foxxo.fafeed.ui
 
+import cz.foxxo.fafeed.R
 import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -155,9 +156,12 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
         start()
     }
 
-    private fun humanError(t: Throwable): String = when (t) {
-        is FaAuthException -> "Přihlášení na FurAffinity vypršelo. Přihlas se znovu."
-        else -> "Synchronizace selhala: ${t.message ?: t::class.simpleName}"
+    private fun humanError(t: Throwable): String {
+        val res = getApplication<Application>().resources
+        return when (t) {
+            is FaAuthException -> res.getString(R.string.session_expired)
+            else -> res.getString(R.string.sync_failed, t.message ?: t::class.simpleName ?: "")
+        }
     }
 
     companion object {

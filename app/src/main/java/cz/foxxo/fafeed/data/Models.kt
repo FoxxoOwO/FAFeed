@@ -48,4 +48,4 @@ data class SubmissionDetail(
     val viewUrl: String get() = "${FaParser.BASE}/view/$id/"
 }
 
-class FaAuthException(message: String = "Přihlášení na FurAffinity vypršelo") : Exception(message)
+class FaAuthException(message: String = "FurAffinity session expired") : Exception(message)

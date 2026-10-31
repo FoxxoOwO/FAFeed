@@ -18,6 +18,7 @@ import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +38,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import cz.foxxo.fafeed.R
 import androidx.compose.ui.unit.dp
 import androidx.documentfile.provider.DocumentFile
 import java.util.Locale
@@ -56,11 +60,14 @@ fun SettingsSheet(
     onSyncAll: () -> Unit,
     onLogout: () -> Unit,
     onDismiss: () -> Unit,
+    lang: String = LANG_SYSTEM,
+    onSetLang: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val prefs = remember { Prefs(context) }
     var folderName by remember { mutableStateOf(prefs.downloadTreeName) }
 
+    val selectedFolderLabel = stringResource(R.string.selected_folder)
     val app = context.applicationContext as? FaApp
     val scope = rememberCoroutineScope()
     var cacheBytes by remember { mutableStateOf(-1L) }
@@ -79,7 +86,7 @@ fun SettingsSheet(
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
                 )
             }
-            val name = DocumentFile.fromTreeUri(context, uri)?.name ?: uri.lastPathSegment ?: "vybraná složka"
+            val name = DocumentFile.fromTreeUri(context, uri)?.name ?: uri.lastPathSegment ?: selectedFolderLabel
             prefs.downloadTreeUri = uri.toString()
             prefs.downloadTreeName = name
             folderName = name
@@ -95,9 +102,10 @@ fun SettingsSheet(
                 .fillMaxWidth()
                 .padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
         ) {
-            Text("Nastavení", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(
-                if (state.user.isNotBlank()) "Přihlášen jako @${state.user}" else "Nepřihlášeno",
+                if (state.user.isNotBlank()) stringResource(R.string.signed_in_as, state.user)
+                else stringResource(R.string.not_signed_in),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -105,50 +113,75 @@ fun SettingsSheet(
             Spacer(Modifier.height(18.dp))
 
             SettingSwitch(
-                title = "Skrýt NSFW",
-                subtitle = "V feedu nebudou maturity ani adult příspěvky",
+                title = stringResource(R.string.hide_nsfw),
+                subtitle = stringResource(R.string.hide_nsfw_subtitle),
                 checked = state.safeOnly,
                 onChange = onSafeOnly,
             )
             SettingSwitch(
-                title = "Rozmazat NSFW náhledy",
-                subtitle = "Obsah se zobrazí až po klepnutí",
+                title = stringResource(R.string.blur_nsfw),
+                subtitle = stringResource(R.string.blur_nsfw_subtitle),
                 checked = state.blurNsfw,
                 onChange = onBlurNsfw,
             )
+
+            Spacer(Modifier.height(14.dp))
+
+            Text(
+                stringResource(R.string.language),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    LANG_SYSTEM to stringResource(R.string.lang_system),
+                    "cs" to stringResource(R.string.lang_czech),
+                    "en" to stringResource(R.string.lang_english),
+                ).forEach { (tag, label) ->
+                    FilterChip(
+                        selected = lang == tag,
+                        onClick = { onSetLang(tag) },
+                        label = { Text(label) },
+                    )
+                }
+            }
 
             Spacer(Modifier.height(10.dp))
             HorizontalDivider()
             Spacer(Modifier.height(14.dp))
 
-            Text("Watchlist", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.watchlist), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(4.dp))
+            val syncedSuffix = if (state.lastSyncAt > 0) {
+                stringResource(
+                    R.string.synced_at,
+                    java.time.Instant.ofEpochMilli(state.lastSyncAt)
+                        .atZone(java.time.ZoneId.systemDefault())
+                        .format(java.time.format.DateTimeFormatter.ofPattern("d. M. HH:mm")),
+                )
+            } else ""
             Text(
-                buildString {
-                    append(state.followedCount)
-                    append(" sledovaných")
-                    if (state.lastSyncAt > 0) {
-                        append(" • sync ")
-                        append(java.time.Instant.ofEpochMilli(state.lastSyncAt)
-                            .atZone(java.time.ZoneId.systemDefault())
-                            .format(java.time.format.DateTimeFormatter.ofPattern("d. M. HH:mm")))
-                    }
-                },
+                pluralStringResource(
+                    R.plurals.followed_count,
+                    state.followedCount,
+                    state.followedCount,
+                ) + (if (syncedSuffix.isEmpty()) "" else " $syncedSuffix"),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (state.refreshing) {
                 Text(
-                    "Synchronizuji ${state.progressDone}/${state.progressTotal}…",
+                    stringResource(R.string.syncing_progress, state.progressDone, state.progressTotal),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
             TextButton(onClick = onSyncAll, enabled = !state.refreshing) {
-                Text("Synchronizovat celý watchlist")
+                Text(stringResource(R.string.sync_all))
             }
             Text(
-                "Běžná synchronizace prochází watchlist po dávkách, tohle projde všechny najednou.",
+                stringResource(R.string.sync_all_hint),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -157,10 +190,10 @@ fun SettingsSheet(
             HorizontalDivider()
             Spacer(Modifier.height(14.dp))
 
-            Text("Složka pro stahování", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.download_folder), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(4.dp))
             Text(
-                folderName.ifBlank { "Výchozí – Stahování/FAFeed" },
+                folderName.ifBlank { stringResource(R.string.default_folder) },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -172,7 +205,7 @@ fun SettingsSheet(
                 TextButton(onClick = { folderPicker.launch(null) }) {
                     Icon(Icons.Rounded.Folder, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Vybrat složku")
+                    Text(stringResource(R.string.choose_folder))
                 }
                 if (prefs.downloadTreeUri.isNotBlank()) {
                     TextButton(onClick = {
@@ -180,7 +213,7 @@ fun SettingsSheet(
                         prefs.downloadTreeName = ""
                         folderName = ""
                     }) {
-                        Text("Výchozí")
+                        Text(stringResource(R.string.default_option))
                     }
                 }
             }
@@ -189,11 +222,15 @@ fun SettingsSheet(
             HorizontalDivider()
             Spacer(Modifier.height(14.dp))
 
-            Text("Cache náhledů", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.thumb_cache), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(4.dp))
             Text(
-                if (cacheBytes < 0) "počítám…"
-                else "${formatBytes(cacheBytes)} z ${formatBytes(FaApp.DISK_CACHE_MAX_BYTES)}",
+                if (cacheBytes < 0) stringResource(R.string.cache_counting)
+                else stringResource(
+                    R.string.cache_usage,
+                    formatBytes(cacheBytes),
+                    formatBytes(FaApp.DISK_CACHE_MAX_BYTES),
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -205,7 +242,7 @@ fun SettingsSheet(
                     }
                 },
             ) {
-                Text("Vymazat cache náhledů")
+                Text(stringResource(R.string.clear_cache))
             }
 
             Spacer(Modifier.height(10.dp))
@@ -224,7 +261,7 @@ fun SettingsSheet(
             ) {
                 Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(12.dp))
-                Text("Otevřít feed na FurAffinity", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.open_feed_on_fa), style = MaterialTheme.typography.bodyLarge)
             }
 
             Row(
@@ -245,7 +282,7 @@ fun SettingsSheet(
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    "Odhlásit",
+                    stringResource(R.string.log_out),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.error,
                 )

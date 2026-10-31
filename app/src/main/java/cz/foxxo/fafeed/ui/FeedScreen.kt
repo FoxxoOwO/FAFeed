@@ -78,6 +78,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import cz.foxxo.fafeed.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.SingletonImageLoader
@@ -95,6 +98,8 @@ fun FeedScreen(
     vm: FeedViewModel,
     onOpenSubmission: (Long) -> Unit,
     onLogout: () -> Unit,
+    lang: String = LANG_SYSTEM,
+    onSetLang: (String) -> Unit = {},
     listState: LazyListState = rememberLazyListState(),
 ) {
     val state = vm.state
@@ -134,6 +139,8 @@ fun FeedScreen(
 
     if (settingsOpen) {
         SettingsSheet(
+            lang = lang,
+            onSetLang = onSetLang,
             state = state,
             onSafeOnly = vm::setSafeOnly,
             onBlurNsfw = vm::setBlurNsfw,
@@ -155,7 +162,7 @@ fun FeedScreen(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 ) {
-                    Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "Nahoru na začátek")
+                    Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = stringResource(R.string.jump_to_top))
                 }
             }
         },
@@ -173,9 +180,13 @@ fun FeedScreen(
                                 fontWeight = FontWeight.Bold,
                             )
                         }
+                        val syncing = state.refreshing && state.progressTotal > 0
                         val subtitle = when {
-                            state.refreshing && state.progressTotal > 0 ->
-                                "Synchronizuji ${state.progressDone}/${state.progressTotal}…"
+                            syncing -> stringResource(
+                                R.string.syncing_progress,
+                                state.progressDone,
+                                state.progressTotal,
+                            )
 
                             state.user.isNotBlank() -> "@${state.user}"
                             else -> ""
@@ -188,7 +199,7 @@ fun FeedScreen(
                             Text(
                                 text,
                                 style = MaterialTheme.typography.labelMedium,
-                                color = if (text.startsWith("Synchronizuji")) {
+                                color = if (syncing) {
                                     MaterialTheme.colorScheme.primary
                                 } else {
                                     MaterialTheme.colorScheme.onSurfaceVariant
@@ -199,10 +210,10 @@ fun FeedScreen(
                 },
                 actions = {
                     IconButton(onClick = { vm.refresh() }) {
-                        Icon(Icons.Rounded.Refresh, contentDescription = "Obnovit")
+                        Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.refresh))
                     }
                     IconButton(onClick = { settingsOpen = true }) {
-                        Icon(Icons.Rounded.Settings, contentDescription = "Nastavení")
+                        Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.settings))
                     }
                 },
             )
@@ -235,16 +246,20 @@ fun FeedScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             state.error ?: if (state.followedCount > 0) {
-                                "Sleduješ ${state.followedCount} lidí, ale zatím se nic nenačetlo – klepni na Zkusit znovu."
+                                pluralStringResource(
+                                    R.plurals.empty_following,
+                                    state.followedCount,
+                                    state.followedCount,
+                                )
                             } else {
-                                "Zatím neznám tvůj watchlist – přihlas se a nech feed synchronizovat."
+                                stringResource(R.string.empty_no_watchlist)
                             },
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 32.dp),
                         )
                         Spacer(Modifier.height(12.dp))
-                        TextButton(onClick = { vm.refresh() }) { Text("Zkusit znovu") }
+                        TextButton(onClick = { vm.refresh() }) { Text(stringResource(R.string.retry)) }
                     }
                 }
 
@@ -291,11 +306,16 @@ fun FeedScreen(
                                         strokeWidth = 2.dp,
                                     )
                                     Spacer(Modifier.width(10.dp))
-                                    Text("Načítám další…", style = MaterialTheme.typography.bodySmall)
+                                    Text(stringResource(R.string.loading_more), style = MaterialTheme.typography.bodySmall)
                                 }
                             } else {
                                 Text(
-                                    "Konec feedu • ${state.totalShown} příspěvků od ${state.followedCount} sledovaných",
+                                    pluralStringResource(
+                                        R.plurals.feed_end,
+                                        state.totalShown,
+                                        state.totalShown,
+                                        state.followedCount,
+                                    ),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
@@ -431,7 +451,7 @@ fun FeedCard(
                                 tint = Color.White,
                             )
                             Text(
-                                "NSFW – klepni pro zobrazení",
+                                stringResource(R.string.nsfw_hidden),
                                 color = Color.White,
                                 style = MaterialTheme.typography.labelMedium,
                             )
@@ -447,7 +467,7 @@ fun FeedCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    item.title.ifBlank { "(bez názvu)" },
+                    item.title.ifBlank { stringResource(R.string.untitled) },
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 2,
@@ -456,7 +476,7 @@ fun FeedCard(
                 IconButton(onClick = { openInBrowser(context, item.viewUrl) }) {
                     Icon(
                         Icons.AutoMirrored.Rounded.OpenInNew,
-                        contentDescription = "Otevřít na FurAffinity",
+                        contentDescription = stringResource(R.string.open_on_fa),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp),
                     )

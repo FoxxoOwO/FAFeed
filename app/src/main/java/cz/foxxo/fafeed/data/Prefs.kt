@@ -53,6 +53,11 @@ class Prefs(context: Context) {
         get() = sp.getLong("users_fetched_at", 0L)
         set(value) = sp.edit().putLong("users_fetched_at", value).apply()
 
+    /** "system" follows the device locale, otherwise a language tag such as "cs" or "en". */
+    var lang: String
+        get() = sp.getString("lang", "system").orEmpty()
+        set(value) = sp.edit().putString("lang", value).apply()
+
     fun clearSession() {
         sp.edit().remove("cookies").remove("user").remove("cached_feed_v2")
             .remove("watch_users").remove("scan_state").remove("scan_index")

@@ -32,6 +32,7 @@ scrollováním.
   přes DownloadManager; s vlastní složkou appka stahuje sama (OkHttp + cookies)
   a zapisuje přes SAF.
 - **NSFW** – volitelné skrytí (safe režim) a rozmazání náhledů do klepnutí.
+- **Čeština + English** – všechny texty jsou v `strings.xml` (`values/` = anglicky, `values-cs/` = česky). Jazyk jde přepnout v Nastavení (Systém / Čeština / English) a funguje i na starších Androidech; na Androidu 13+ navíc appka nabízí jazykovou volbu v systémovém nastavení přes `locales_config.xml`.
 - **Offline start** – poslední feed se cachuje do SharedPreferences, takže se appka
 - **Cache náhledů** – náhledy jdou na disk (limit 512 MB, `cacheDir/coil3_disk_cache`), takže se při scrollování zpět ani po restartu appky nestahují znovu; pár karet dopředu se přednačítá. Velikost je vidět v Nastavení a jde smazat.
   otevře okamžitě i bez sítě.

@@ -29,6 +29,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.res.stringResource
+import cz.foxxo.fafeed.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -135,14 +137,14 @@ fun ZoomableImageDialog(
                 },
                 error = {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Obrázek se nepodařilo načíst", color = Color.White)
+                        Text(stringResource(R.string.image_load_failed), color = Color.White)
                     }
                 },
             )
 
             if (loaded && scale <= MIN_SCALE + 0.05f) {
                 Text(
-                    "Dvojklikem přiblížíš, tažením posuneš",
+                    stringResource(R.string.zoom_hint),
                     color = Color.White.copy(alpha = 0.7f),
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier
@@ -159,7 +161,7 @@ fun ZoomableImageDialog(
             ) {
                 Icon(
                     Icons.Rounded.Close,
-                    contentDescription = "Zavřít",
+                    contentDescription = stringResource(R.string.close),
                     tint = Color.White,
                     modifier = Modifier.size(26.dp),
                 )

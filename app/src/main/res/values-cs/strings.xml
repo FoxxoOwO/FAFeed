@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FA Feed</string>
+
+    <!-- Feed -->
+    <string name="refresh">Obnovit</string>
+    <string name="settings">Nastavení</string>
+    <string name="jump_to_top">Nahoru na začátek</string>
+    <string name="retry">Zkusit znovu</string>
+    <string name="loading_more">Načítám další…</string>
+    <string name="nsfw_hidden">NSFW – klepni pro zobrazení</string>
+    <string name="untitled">(bez názvu)</string>
+    <string name="open_on_fa">Otevřít na FurAffinity</string>
+    <plurals name="feed_end">
+        <item quantity="one">Konec feedu • %1$d příspěvek od %2$d sledovaných</item>
+        <item quantity="few">Konec feedu • %1$d příspěvky od %2$d sledovaných</item>
+        <item quantity="many">Konec feedu • %1$d příspěvků od %2$d sledovaných</item>
+        <item quantity="other">Konec feedu • %1$d příspěvků od %2$d sledovaných</item>
+    </plurals>
+    <plurals name="empty_following">
+        <item quantity="one">Sleduješ %1$d člověka, ale zatím se nic nenačetlo – klepni na Zkusit znovu.</item>
+        <item quantity="few">Sleduješ %1$d lidi, ale zatím se nic nenačetlo – klepni na Zkusit znovu.</item>
+        <item quantity="many">Sleduješ %1$d lidí, ale zatím se nic nenačetlo – klepni na Zkusit znovu.</item>
+        <item quantity="other">Sleduješ %1$d lidí, ale zatím se nic nenačetlo – klepni na Zkusit znovu.</item>
+    </plurals>
+    <string name="empty_no_watchlist">Zatím neznám tvůj watchlist – přihlas se a nech feed synchronizovat.</string>
+
+    <!-- Detail -->
+    <string name="back">Zpět</string>
+    <string name="submission">Příspěvek</string>
+    <string name="open_on_fa_short">Otevřít na FA</string>
+    <string name="detail_error">Příspěvek se nepodařilo načíst</string>
+    <string name="load_failed">Načtení selhalo</string>
+    <string name="zoom_in">Přiblížit</string>
+    <string name="views">Zobrazení</string>
+    <string name="favorites">Oblíbené</string>
+    <string name="comments">Komentáře</string>
+    <string name="download">Stáhnout</string>
+    <string name="downloading">Stahuji…</string>
+    <string name="download_failed">Stažení selhalo</string>
+    <string name="downloading_to_downloads">Stahuji do Stahování/FAFeed</string>
+    <string name="saved_as">Uloženo: %1$s</string>
+    <string name="image_load_failed">Obrázek se nepodařilo načíst</string>
+    <string name="zoom_hint">Dvojklikem přiblížíš, tažením posuneš</string>
+    <string name="close">Zavřít</string>
+
+    <!-- Login -->
+    <string name="login_title">Přihlášení</string>
+    <string name="login_subtitle">Přihlas se na FurAffinity – appka pak čte tvůj feed sledovaných.</string>
+    <string name="login_not_yet">Ještě nejsi přihlášený – dokonči přihlášení na FurAffinity.</string>
+    <string name="login_verify_failed">Přihlášení se nepodařilo ověřit. Zkus to znovu.</string>
+    <string name="verifying">Ověřuji…</string>
+    <string name="im_signed_in">Jsem přihlášený</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Nastavení</string>
+    <string name="signed_in_as">Přihlášen jako @%1$s</string>
+    <string name="not_signed_in">Nepřihlášeno</string>
+    <string name="hide_nsfw">Skrýt NSFW</string>
+    <string name="hide_nsfw_subtitle">V feedu nebudou maturity ani adult příspěvky</string>
+    <string name="blur_nsfw">Rozmazat NSFW náhledy</string>
+    <string name="blur_nsfw_subtitle">Obsah se zobrazí až po klepnutí</string>
+    <string name="watchlist">Watchlist</string>
+    <plurals name="followed_count">
+        <item quantity="one">%1$d sledovaný</item>
+        <item quantity="few">%1$d sledovaní</item>
+        <item quantity="many">%1$d sledovaných</item>
+        <item quantity="other">%1$d sledovaných</item>
+    </plurals>
+    <string name="synced_at">• sync %1$s</string>
+    <string name="syncing_progress">Synchronizuji %1$d/%2$d…</string>
+    <string name="sync_all">Synchronizovat celý watchlist</string>
+    <string name="sync_all_hint">Běžná synchronizace prochází watchlist po dávkách, tohle projde všechny najednou.</string>
+    <string name="download_folder">Složka pro stahování</string>
+    <string name="default_folder">Výchozí – Stahování/FAFeed</string>
+    <string name="choose_folder">Vybrat složku</string>
+    <string name="default_option">Výchozí</string>
+    <string name="selected_folder">vybraná složka</string>
+    <string name="thumb_cache">Cache náhledů</string>
+    <string name="cache_counting">počítám…</string>
+    <string name="cache_usage">%1$s z %2$s</string>
+    <string name="clear_cache">Vymazat cache náhledů</string>
+    <string name="open_feed_on_fa">Otevřít feed na FurAffinity</string>
+    <string name="log_out">Odhlásit</string>
+
+    <string name="language">Jazyk</string>
+    <string name="lang_system">Systém</string>
+    <string name="lang_czech">Čeština</string>
+    <string name="lang_english">English</string>
+
+    <!-- Errors -->
+    <string name="session_expired">Přihlášení na FurAffinity vypršelo. Přihlas se znovu.</string>
+    <string name="sync_failed">Synchronizace selhala: %1$s</string>
+    <string name="empty_response">Prázdná odpověď</string>
+</resources>

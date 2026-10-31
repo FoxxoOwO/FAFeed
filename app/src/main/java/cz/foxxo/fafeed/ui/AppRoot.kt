@@ -31,6 +31,7 @@ fun AppRoot() {
     val prefs = remember { Prefs(context) }
     var loggedIn by remember { mutableStateOf(prefs.cookies.isNotBlank()) }
     var detailId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var lang by remember { mutableStateOf(prefs.lang) }
     // Kept here (not in FeedScreen) so the feed keeps its scroll position while a post is open.
     val feedListState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
 
@@ -40,6 +41,7 @@ fun AppRoot() {
         else -> UiRoute(Screen.FEED)
     }
 
+    AppLocale(lang) {
     AnimatedContent(
         targetState = route,
         transitionSpec = {
@@ -74,6 +76,8 @@ fun AppRoot() {
             Screen.FEED -> FeedScreen(
                 vm = vm,
                 listState = feedListState,
+                lang = lang,
+                onSetLang = { prefs.lang = it; lang = it },
                 onOpenSubmission = { detailId = it },
                 onLogout = {
                     runCatching {
@@ -86,5 +90,6 @@ fun AppRoot() {
                 },
             )
         }
+    }
     }
 }
