@@ -27,9 +27,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,8 +39,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.documentfile.provider.DocumentFile
+import java.util.Locale
+import cz.foxxo.fafeed.FaApp
 import cz.foxxo.fafeed.data.FaParser
 import cz.foxxo.fafeed.data.Prefs
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +60,14 @@ fun SettingsSheet(
     val context = LocalContext.current
     val prefs = remember { Prefs(context) }
     var folderName by remember { mutableStateOf(prefs.downloadTreeName) }
+
+    val app = context.applicationContext as? FaApp
+    val scope = rememberCoroutineScope()
+    var cacheBytes by remember { mutableStateOf(-1L) }
+    var cacheRefresh by remember { mutableStateOf(0) }
+    LaunchedEffect(cacheRefresh) {
+        cacheBytes = withContext(Dispatchers.IO) { app?.imageDiskCache?.size ?: 0L }
+    }
 
     val folderPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree(),
@@ -170,9 +185,32 @@ fun SettingsSheet(
                 }
             }
 
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(10.dp))
             HorizontalDivider()
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(14.dp))
+
+            Text("Cache náhledů", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                if (cacheBytes < 0) "počítám…"
+                else "${formatBytes(cacheBytes)} z ${formatBytes(FaApp.DISK_CACHE_MAX_BYTES)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TextButton(
+                onClick = {
+                    scope.launch {
+                        withContext(Dispatchers.IO) { app?.imageDiskCache?.clear() }
+                        cacheRefresh++
+                    }
+                },
+            ) {
+                Text("Vymazat cache náhledů")
+            }
+
+            Spacer(Modifier.height(10.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(14.dp))
 
             Row(
                 modifier = Modifier
@@ -239,4 +277,11 @@ private fun SettingSwitch(
         }
         Switch(checked = checked, onCheckedChange = onChange)
     }
+}
+
+private fun formatBytes(bytes: Long): String = when {
+    bytes >= 1_000_000_000L -> String.format(Locale.US, "%.1f GB", bytes / 1_000_000_000.0)
+    bytes >= 1_000_000L -> String.format(Locale.US, "%.0f MB", bytes / 1_000_000.0)
+    bytes >= 1_000L -> "${bytes / 1_000} kB"
+    else -> "$bytes B"
 }

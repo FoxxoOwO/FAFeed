@@ -33,6 +33,7 @@ scrollováním.
   a zapisuje přes SAF.
 - **NSFW** – volitelné skrytí (safe režim) a rozmazání náhledů do klepnutí.
 - **Offline start** – poslední feed se cachuje do SharedPreferences, takže se appka
+- **Cache náhledů** – náhledy jdou na disk (limit 512 MB, `cacheDir/coil3_disk_cache`), takže se při scrollování zpět ani po restartu appky nestahují znovu; pár karet dopředu se přednačítá. Velikost je vidět v Nastavení a jde smazat.
   otevře okamžitě i bez sítě.
 
 ## Architektura

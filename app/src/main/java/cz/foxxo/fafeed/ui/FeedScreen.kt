@@ -80,7 +80,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.SingletonImageLoader
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
 import kotlinx.coroutines.launch
 import cz.foxxo.fafeed.data.FaParser
 import cz.foxxo.fafeed.data.FeedItem
@@ -98,6 +100,27 @@ fun FeedScreen(
     val state = vm.state
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    // Warm the disk cache a few cards ahead so scrolling never waits on the network.
+    val appContext = LocalContext.current.applicationContext
+    val prefetched = remember { mutableSetOf<String>() }
+    LaunchedEffect(state.visibleItems.size, listState.firstVisibleItemIndex) {
+        val loader = SingletonImageLoader.get(appContext)
+        val from = listState.firstVisibleItemIndex.coerceAtLeast(0)
+        state.visibleItems.drop(from).take(12).forEach { item ->
+            val url = item.thumbUrl
+            if (url.isNotBlank() && prefetched.add(url)) {
+                runCatching {
+                    loader.enqueue(
+                        ImageRequest.Builder(appContext)
+                            .data(url)
+                            .size(360)
+                            .build(),
+                    )
+                }
+            }
+        }
+    }
     var settingsOpen by remember { mutableStateOf(false) }
 
     // Shows up once you scroll back up after reading further down the feed.
