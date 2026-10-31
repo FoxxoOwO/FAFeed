@@ -1,87 +1,105 @@
 # FA Feed
 
-Nativní Android aplikace (Kotlin + Jetpack Compose), která z FurAffinity udělá klasický
-sociální feed: posty od sledovaných uživatelů, nejnovější nahoře, s nekonečným
-scrollováním.
+_Česky? Přečti si [README.cs.md](README.cs.md)._
 
-## Co umí
+Native Android app (Kotlin + Jetpack Compose) that turns FurAffinity into a classic
+social feed: posts from the accounts you follow, newest first, with endless scrolling.
 
-- **Feed od sledovaných** – nestojí na notifikacích, ale na samotném watchlistu:
-  appka si načte seznam sledovaných (`/watchlist/by/{user}/`) a u každého si přečte
-  první stránku galerie (`/gallery/{user}/`). Nové příspěvky pozná podle kurzoru
-  (nejvyšší známé submission id), takže se nic neduplikuje.
-  - Notifikační fronta `/msg/submissions/` se používá jen jako rychlá vložka, když
-    v ní něco je – **vyčištění notifikací už feed nevymaže** (ověřeno: 240 z 312
-    příspěvků přišlo z galerií, ne z notifikací).
-  - Běžná synchronizace projde rotující dávku 60 sledovaných (~20 s), takže se celý
-    watchlist protočí během několika obnovení. V Nastavení je i „Synchronizovat celý
-    watchlist“ (269 účtů, ~90 s, ověřeno 269/269).
-  - Feed se ukládá lokálně (do 800 příspěvků), takže po startu je hned vidět a řadí se
-    od nejnovějších bez ohledu na to, co FA zrovna má v notifikacích.
-- **Přihlášení** – ve WebView (Cloudflare Turnstile i případné 2FA zvládne prohlížeč).
-  Cookies `a` + `b` (a `cf_clearance`) se uloží a posílají se dál jako hlavička `Cookie`.
-- **Karta postu** – avatar autora, jméno, rating (GENERAL / MATURE / ADULT), náhled
-  v rozlišení 600 px, titulek, odkaz na FA.
-- **Detail** – plný obrázek (`data-fullview-src`), autor, datum, popis, statistiky,
-  tagy, tlačítko Stáhnout a Otevřít na FA.
-- **Zoom** – klepnutím na obrázek v detailu se otevře fullscreen prohlížeč: pinch zoom
-  (1×–6×), dvojklik 2.5×, tažení pro posun (posun je omezený, aby obrázek neuplaval),
-  klepnutí / X zavře.
-- **Složka pro stahování** – v Nastavení jde vybrat libovolnou složku přes systémový
-  picker (SAF tree, oprávnění se ukládá). Bez volby se stahuje do `Stahování/FAFeed`
-  přes DownloadManager; s vlastní složkou appka stahuje sama (OkHttp + cookies)
-  a zapisuje přes SAF.
-- **NSFW** – volitelné skrytí (safe režim) a rozmazání náhledů do klepnutí.
-- **Čeština + English** – všechny texty jsou v `strings.xml` (`values/` = anglicky, `values-cs/` = česky). Jazyk jde přepnout v Nastavení (Systém / Čeština / English) a funguje i na starších Androidech; na Androidu 13+ navíc appka nabízí jazykovou volbu v systémovém nastavení přes `locales_config.xml`.
-- **Offline start** – poslední feed se cachuje do SharedPreferences, takže se appka
-- **Cache náhledů** – náhledy jdou na disk (limit 512 MB, `cacheDir/coil3_disk_cache`), takže se při scrollování zpět ani po restartu appky nestahují znovu; pár karet dopředu se přednačítá. Velikost je vidět v Nastavení a jde smazat.
-  otevře okamžitě i bez sítě.
+## What it does
 
-## Architektura
+- **Feed from the accounts you follow** – it does not rely on notifications but on the
+  watchlist itself: the app loads your watch list (`/watchlist/by/{user}/`) and reads the
+  first gallery page of every account (`/gallery/{user}/`). New posts are recognised by a
+  cursor (the highest known submission id), so nothing is duplicated.
+  - The notification queue `/msg/submissions/` is used only as a quick insert when it has
+    something in it – **clearing notifications no longer empties the feed** (verified: 240
+    of 312 posts came from galleries, not from notifications).
+  - A normal sync walks a rotating batch of 60 followed accounts (~20 s), so the whole
+    watchlist cycles within a few refreshes. Settings also offers "Sync the whole
+    watchlist" (269 accounts, ~90 s, verified 269/269).
+  - The feed is stored locally (up to 800 posts), so it is visible immediately after
+    launch and sorted newest-first no matter what FA currently has in notifications.
+- **Sign-in** – in a WebView (Cloudflare Turnstile and any 2FA are handled by the
+  browser). Cookies `a` + `b` (and `cf_clearance`) are stored and sent as the `Cookie`
+  header.
+- **Post card** – author avatar, name, rating (GENERAL / MATURE / ADULT), 600 px
+  thumbnail, title, link to FA.
+- **Detail** – full image (`data-fullview-src`), author, date, description, stats, tags,
+  Download and Open on FA buttons.
+- **Zoom** – tapping the image in the detail opens a fullscreen viewer: pinch zoom
+  (1×–6×), double-tap 2.5×, drag to pan (panning is constrained so the image does not
+  drift), tap / X to close.
+- **Download folder** – any folder can be picked in Settings through the system picker
+  (SAF tree, the permission is persisted). Without a pick, downloads go to
+  `Downloads/FAFeed` via DownloadManager; with a custom folder the app downloads itself
+  (OkHttp + cookies) and writes through SAF.
+- **NSFW** – optional hiding (safe mode) and blurring of previews until tapped.
+- **Czech + English** – all strings live in `strings.xml` (`values/` = English,
+  `values-cs/` = Czech). The language can be switched in Settings
+  (System / Čeština / English) and works on older Androids too; on Android 13+ the app
+  also appears in the system per-app language settings via `locales_config.xml`.
+- **Offline start** – the last feed is cached in SharedPreferences, so the app opens
+  instantly even without a network.
+- **Thumbnail cache** – thumbnails are cached on disk (512 MB limit,
+  `cacheDir/coil3_disk_cache`), so scrolling back or restarting never re-downloads them;
+  a few cards ahead are prefetched. The size is shown in Settings and can be cleared.
+- **Animations** – feed ↔ detail transitions, card press feedback, a smooth NSFW veil
+  fade, and a crossfade in the top bar subtitle.
+
+## Architecture
 
 ```
 app/src/main/java/cz/foxxo/fafeed/
-├── FaApp.kt              # Application, Coil ImageLoader (Referer + cookies)
+├── FaApp.kt              # Application, Coil ImageLoader (Referer + cookies, disk cache)
 ├── MainActivity.kt
 ├── data/
-│   ├── FaParser.kt       # jsoup parser FA "beta" layoutu (bez Android závislostí)
+│   ├── FaParser.kt       # jsoup parser for the FA "beta" layout (no Android deps)
 │   ├── FaClient.kt       # OkHttp + cookies
-│   ├── FeedRepository.kt # synchronizace watchlistu (galerie + kurzory + rotace)
-│   ├── FeedStore.kt      # lokální store, JSON serializace, merge/planner helpery
+│   ├── FeedRepository.kt # watchlist sync (galleries + cursors + rotation)
+│   ├── FeedStore.kt      # local store, JSON serialisation, merge/planner helpers
 │   ├── Models.kt         # FeedItem, FeedPage, SubmissionDetail
-│   └── Prefs.kt          # cookies, uživatel, přepínače, cache
+│   └── Prefs.kt          # cookies, user, switches, cache, language
 └── ui/
-    ├── AppRoot.kt        # login / feed / detail
-    ├── LoginScreen.kt    # WebView login + ověření cookies
-    ├── FeedScreen.kt     # LazyColumn + PullToRefresh + nekonečný scroll
-    ├── SettingsSheet.kt  # NSFW přepínače, složka pro stahování, odhlášení
+    ├── AppRoot.kt        # login / feed / detail routing
+    ├── AppLocale.kt      # in-app language override
+    ├── LoginScreen.kt    # WebView login + cookie verification
+    ├── FeedScreen.kt     # LazyColumn + PullToRefresh + endless scroll + prefetch
+    ├── SettingsSheet.kt  # NSFW switches, language, watchlist sync, folder, cache
     ├── DetailScreen.kt
+    ├── ZoomableImageDialog.kt
+    ├── UiUtils.kt        # saving images, opening FA in a browser
     ├── FeedViewModel.kt
     └── theme/Theme.kt
 ```
 
-Parsování stojí na marku FA: `figure[id^=sid-]` s `figcaption`, rating v classách
-`r-general|r-mature|r-adult`, thumbnail `//t.furaffinity.net/{id}@200-{ts}.jpg`
-(přepisuje se na `@600`).
+Parsing relies on FA's markup: `figure[id^=sid-]` with `figcaption`, the rating in
+classes `r-general|r-mature|r-adult`, the thumbnail
+`//t.furaffinity.net/{id}@200-{ts}.jpg` (rewritten to `@600`).
 
 ## Build
 
 ```bash
 ./gradlew :app:assembleDebug      # JDK 17+, AGP 9.4.1, Gradle 9.7.1, compileSdk 36
-./gradlew :app:testDebugUnitTest  # 15 testů: parser + logika watchlist feedu
+./gradlew :app:testDebugUnitTest  # 15 tests: parser + watchlist feed logic
 ```
 
-`local.properties` s `sdk.dir=...` použij lokálně; v CI stačí `ANDROID_HOME`.
+Use a local `local.properties` with `sdk.dir=...`; in CI `ANDROID_HOME` is enough.
 
 ## CI
 
-GitHub Actions (`.github/workflows/android.yml`) při každém pushi do `main`, PR a ručním
-spuštění spustí unit testy, sestaví debug APK a nahraje ho jako artifact
-`FAFeed-debug-apk`. Když pushneš tag `v*`, APK se přiloží i k GitHub Release.
+GitHub Actions (`.github/workflows/android.yml`) runs on every push to `main`, on pull
+requests and on manual dispatch: it runs the unit tests, builds the debug APK and uploads
+it as the `FAFeed-debug-apk` artifact. Pushing a `v*` tag also attaches the APK to a
+GitHub Release.
 
-## Omezení
+Release APKs are debug-signed with the CI keystore, so they cannot upgrade over a debug
+APK you built locally – uninstall that one first.
 
-- FurAffinity nemá veřejné API; appka parsuje HTML. Když FA změní layout, upraví se
-  `FaParser.kt` a testy to odhalí (fixture `app/src/test/resources/fa_browse_real.html`).
-- Účet musí mít v FA nastavení zapnutý nový (beta) motiv – selectors jsou z něj.
-- Sledování (watchlist) se v appce needituje, jen se čte feed.
+## Limitations
+
+- FurAffinity has no public API; the app parses HTML. If FA changes its layout,
+  `FaParser.kt` has to be updated and the tests catch it (fixture
+  `app/src/test/resources/fa_browse_real.html`).
+- The account must have the new (beta) theme enabled in the FA settings – the selectors
+  come from it.
+- The watchlist cannot be edited in the app, it is only read to build the feed.
