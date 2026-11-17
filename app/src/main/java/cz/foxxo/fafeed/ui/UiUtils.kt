@@ -34,6 +34,7 @@ suspend fun saveImage(
     client: FaClient,
     url: String,
     cookies: String,
+    userAgent: String,
     treeUri: String,
     fallbackName: String,
 ): Boolean {
@@ -45,7 +46,7 @@ suspend fun saveImage(
             .setTitle(fileName)
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "FAFeed/$fileName")
-            .addRequestHeader("User-Agent", FA_USER_AGENT)
+            .addRequestHeader("User-Agent", userAgent.ifBlank { FA_USER_AGENT })
             .addRequestHeader("Referer", FaParser.BASE + "/")
         if (cookies.isNotBlank()) request.addRequestHeader("Cookie", cookies)
         return runCatching {

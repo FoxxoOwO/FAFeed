@@ -75,7 +75,7 @@ import java.time.format.DateTimeFormatter
 fun DetailScreen(id: Long, onBack: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { Prefs(context) }
-    val client = remember { FaClient { prefs.cookies } }
+    val client = remember { FaClient(userAgentProvider = { prefs.effectiveUserAgent }) { prefs.cookies } }
     val loadFailedMsg = stringResource(R.string.load_failed)
 
     var detail by remember(id) { mutableStateOf<SubmissionDetail?>(null) }
@@ -287,6 +287,7 @@ private fun DetailContent(
                                 client = client,
                                 url = detail.imageUrl,
                                 cookies = cookies,
+                                userAgent = prefs.effectiveUserAgent,
                                 treeUri = downloadTreeUri,
                                 fallbackName = "fa_${detail.id}.jpg",
                             )

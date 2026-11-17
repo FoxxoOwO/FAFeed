@@ -13,6 +13,17 @@ class Prefs(context: Context) {
         get() = sp.getString("user", "").orEmpty()
         set(value) = sp.edit().putString("user", value).apply()
 
+    /**
+     * User-Agent of the WebView that completed the login. Cloudflare ties `cf_clearance`
+     * to it, so every OkHttp/Coil/DownloadManager request has to send the same string.
+     */
+    var userAgent: String
+        get() = sp.getString("user_agent", "").orEmpty()
+        set(value) = sp.edit().putString("user_agent", value).apply()
+
+    val effectiveUserAgent: String
+        get() = userAgent.ifBlank { FA_USER_AGENT }
+
     var safeOnly: Boolean
         get() = sp.getBoolean("safe_only", false)
         set(value) = sp.edit().putBoolean("safe_only", value).apply()

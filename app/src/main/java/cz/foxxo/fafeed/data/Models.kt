@@ -1,5 +1,7 @@
 package cz.foxxo.fafeed.data
 
+import java.io.IOException
+
 data class FeedItem(
     val id: Long,
     val title: String,
@@ -49,3 +51,7 @@ data class SubmissionDetail(
 }
 
 class FaAuthException(message: String = "FurAffinity session expired") : Exception(message)
+
+/** FurAffinity sits behind a Cloudflare challenge and answered with the interstitial page. */
+class FaBlockedException(message: String = "FurAffinity is behind a Cloudflare challenge") :
+    IOException(message)

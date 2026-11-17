@@ -9,7 +9,6 @@ import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.CachePolicy
 import coil3.request.crossfade
-import cz.foxxo.fafeed.data.FA_USER_AGENT
 import cz.foxxo.fafeed.data.FaParser
 import cz.foxxo.fafeed.data.Prefs
 import okhttp3.OkHttpClient
@@ -33,7 +32,7 @@ class FaApp : Application(), SingletonImageLoader.Factory {
             .readTimeout(30, TimeUnit.SECONDS)
             .addInterceptor { chain ->
                 val builder = chain.request().newBuilder()
-                    .header("User-Agent", FA_USER_AGENT)
+                    .header("User-Agent", prefs.effectiveUserAgent)
                     .header("Referer", FaParser.BASE + "/")
                 if (prefs.cookies.isNotBlank()) {
                     builder.header("Cookie", prefs.cookies)

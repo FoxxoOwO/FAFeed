@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import cz.foxxo.fafeed.data.FaAuthException
+import cz.foxxo.fafeed.data.FaBlockedException
 import cz.foxxo.fafeed.data.FaClient
 import cz.foxxo.fafeed.data.FeedItem
 import cz.foxxo.fafeed.data.FeedRepository
@@ -43,7 +44,7 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
 
     private val prefs = Prefs(app)
     private val store = FeedStore(prefs)
-    private val client = FaClient { prefs.cookies }
+    private val client = FaClient(userAgentProvider = { prefs.effectiveUserAgent }) { prefs.cookies }
     private val repository = FeedRepository(client, store) { prefs.user }
 
     var state by mutableStateOf(
@@ -147,9 +148,10 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
         sessionExpired = false
     }
 
-    fun onLoggedIn(cookies: String, user: String) {
+    fun onLoggedIn(cookies: String, user: String, userAgent: String) {
         prefs.cookies = cookies
         prefs.user = user
+        if (userAgent.isNotBlank()) prefs.userAgent = userAgent
         sessionExpired = false
         state = FeedState(user = user, safeOnly = prefs.safeOnly, blurNsfw = prefs.blurNsfw)
         started = false
@@ -160,6 +162,7 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
         val res = getApplication<Application>().resources
         return when (t) {
             is FaAuthException -> res.getString(R.string.session_expired)
+            is FaBlockedException -> res.getString(R.string.sync_blocked)
             else -> res.getString(R.string.sync_failed, t.message ?: t::class.simpleName ?: "")
         }
     }

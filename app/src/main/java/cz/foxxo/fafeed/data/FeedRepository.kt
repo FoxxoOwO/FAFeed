@@ -43,6 +43,7 @@ class FeedRepository(
 
         // Fast lane: only exists until the user clears/prunes their notifications.
         runCatching { client.feed(FEED_URL) }
+            .onFailure { if (it is FaAuthException || it is FaBlockedException) throw it }
             .getOrNull()
             ?.let { page ->
                 if (page.loginRequired) throw FaAuthException()
@@ -63,7 +64,7 @@ class FeedRepository(
                     val previous = scans[user]
                     val outcome = runCatching { scanUser(user, previous) }
                     outcome.exceptionOrNull()?.let { error ->
-                        if (error is FaAuthException) throw error
+                        if (error is FaAuthException || error is FaBlockedException) throw error
                         errors.incrementAndGet()
                     }
                     onProgress(done.incrementAndGet(), selection.size)

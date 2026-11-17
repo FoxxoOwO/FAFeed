@@ -61,9 +61,9 @@ fun AppRoot() {
     ) { current ->
         when (current.screen) {
             Screen.LOGIN -> LoginScreen(
-                onLoggedIn = { cookies, user ->
+                onLoggedIn = { cookies, user, userAgent ->
                     vm.acknowledgeExpired()
-                    vm.onLoggedIn(cookies, user)
+                    vm.onLoggedIn(cookies, user, userAgent)
                     loggedIn = true
                 },
             )

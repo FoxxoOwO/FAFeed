@@ -51,6 +51,8 @@
     <string name="login_verify_failed">Přihlášení se nepodařilo ověřit. Zkus to znovu.</string>
     <string name="verifying">Ověřuji…</string>
     <string name="im_signed_in">Jsem přihlášený</string>
+    <string name="login_challenge">FurAffinity ještě ověřuje tvůj prohlížeč. Počkej, až se stránka nahoře dokončí, a klepni na tlačítko znovu.</string>
+    <string name="login_blocked">FurAffinity appku nepustilo dál (Cloudflare). Dokonči ověření v okně nahoře a klepni na tlačítko znovu.</string>
 
     <!-- Settings -->
     <string name="settings_title">Nastavení</string>
@@ -90,6 +92,7 @@
 
     <!-- Errors -->
     <string name="session_expired">Přihlášení na FurAffinity vypršelo. Přihlas se znovu.</string>
+    <string name="sync_blocked">FurAffinity žádost zablokovalo (Cloudflare). Přihlas se znovu, aby ověření prošlo, nebo to zkus za chvíli.</string>
     <string name="sync_failed">Synchronizace selhala: %1$s</string>
     <string name="empty_response">Prázdná odpověď</string>
 </resources>
