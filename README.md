@@ -105,8 +105,21 @@ requests and on manual dispatch: it runs the unit tests, builds the debug APK an
 it as the `FAFeed-debug-apk` artifact. Pushing a `v*` tag also attaches the APK to a
 GitHub Release.
 
-Local builds and CI builds use the same committed debug key (`app/debug.keystore`), so
-an installed APK can be updated in place by the in-app updater.
+Signing credentials are never committed. Add these to your local `local.properties`
+(gitignored):
+
+```properties
+signing.keystore=/path/to/key.jks
+signing.storePassword=...
+signing.keyAlias=...
+signing.keyPassword=...
+```
+
+CI reads the same values from GitHub Secrets `KEYSTORE_BASE64` (base64 of the `.jks`
+file), `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. If the secrets are missing,
+the build falls back to `app/debug.keystore`; a release must never be published with
+that fallback if earlier release APKs used a different key, because in-app updates
+would be rejected as a signature mismatch.
 
 ## Updates
 
@@ -126,10 +139,10 @@ shows the system confirmation dialog. On Android 8+ the app also needs "Install 
 apps" to be allowed for FA Feed; the updater opens that system setting if it is missing.
 `REQUEST_INSTALL_PACKAGES` is declared in the manifest.
 
-**Note:** versions up to 1.1.2 were signed with a keystore generated on the CI runner,
-which changed from build to build. Updating from one of those builds to a release using
-`app/debug.keystore` requires a one-time uninstall (the app data is lost). All later
-releases can be updated in place.
+**Note:** versions up to 1.3.0 were signed with debug keystores (the CI runner generated
+a different one before 1.2.0, and `app/debug.keystore` was used from 1.2.0 onwards).
+Moving to the release key configured in `local.properties` / GitHub Secrets requires a
+one-time uninstall (the app data is lost). All later releases can be updated in place.
 
 ## Limitations
 

@@ -104,10 +104,14 @@ GitHub Actions (`.github/workflows/android.yml`) při každém pushi do `main`, 
 spuštění spustí unit testy, sestaví debug APK a nahraje ho jako artifact
 `FAFeed-debug-apk`. Když pushneš tag `v*`, APK se přiloží i k GitHub Release.
 
-Lokální i CI buildy používají stejný klíč uložený v repozitáři (`app/debug.keystore`),
-takže nainstalovanou APK jde aktualizovat přímo v aplikaci. U verzí do 1.1.2 byl klíč
-vygenerovaný v CI pokaždý jiný, takže první přechod na nový klíč vyžaduje odinstalaci
-(a ztrátu dat appky).
+Podpisové údaje se neukládají do repozitáře. Lokálně patří do `local.properties`
+(gitignored): `signing.keystore`, `signing.storePassword`, `signing.keyAlias`,
+`signing.keyPassword`. CI je čte z GitHub Secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`,
+`KEY_ALIAS` a `KEY_PASSWORD`; bez nich použije záložní `app/debug.keystore`.
+
+Verze do 1.3.0 byly podepsané debug klíči (před 1.2.0 se klíč v CI generoval pokaždý
+jiný, od 1.2.0 se používal `app/debug.keystore`). Přechod na release klíč vyžaduje
+jednorázovou odinstalaci a ztrátu dat; další aktualizace už půjdou normálně.
 
 ## Omezení
 

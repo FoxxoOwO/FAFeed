@@ -19,8 +19,9 @@ the Android app.
 - Unit tests for release parsing, version comparison and APK asset selection.
 
 ### Changed
-- Local and CI debug builds now share a committed signing key (`app/debug.keystore`), so
-  future releases can be installed as updates instead of requiring an uninstall.
+- Signing now uses a real release keystore supplied through `local.properties` locally
+  and GitHub Secrets in CI. `app/debug.keystore` is only a fallback for builds without
+  signing secrets.
 - Enabled `BuildConfig` generation to read the app version at runtime.
 
 > Upgrading from 1.1.2 or older still requires a one-time uninstall: those APKs were
