@@ -45,6 +45,12 @@ scrollováním.
   dopředu se přednačítá. Velikost je vidět v Nastavení a jde smazat.
 - **Animace** – přechod feed ↔ detail, zmáčknutí karty, plynulé rozplynutí NSFW závoje
   a crossfade podtitulku v top baru.
+- **Obnovení po Cloudflare** – když sync narazí na ověření, otevře se WebView, kde kontrolu
+  dokončíš ručně; výsledné cookies a User-Agent se pak znovu použijí. Žádné automatické
+  obcházení ochrany.
+- **Bezpečná session** – cookies FurAffinity jsou v `EncryptedSharedPreferences`; staré
+  plaintext cookies se při prvním čtení přenesou.
+- **Skrytí autoři** – seznam v Nastavení skryje příspěvky vybraných účtů.
 - **Profily autorů** – klepnutím na autora ve feedu nebo v detailu se otevře celá jeho
   galerie s možností načítat starší příspěvky.
 - **Hledání a filtry** – prohledávání načtených příspěvků podle autora nebo názvu a filtr
@@ -67,11 +73,14 @@ app/src/main/java/cz/foxxo/fafeed/
 │   ├── FeedRepository.kt # synchronizace watchlistu (galerie + kurzory + rotace)
 │   ├── FeedStore.kt      # lokální store, JSON serializace, merge/planner helpery
 │   ├── Models.kt         # FeedItem, FeedPage, SubmissionDetail
-│   └── Prefs.kt          # cookies, uživatel, přepínače, cache, jazyk
+│   ├── Prefs.kt          # cookies, uživatel, přepínače, cache, jazyk
+│   └── SecureStorage.kt  # šifrované cookies + migrace z plaintextu
 └── ui/
     ├── AppRoot.kt        # login / feed / detail
     ├── AppLocale.kt      # přepnutí jazyka v appce
     ├── LoginScreen.kt    # WebView login + ověření cookies
+    ├── ChallengeScreen.kt # ruční Cloudflare kontrola + předání cookies
+    ├── WebAuth.kt        # sdílený DOM probe pro WebView
     ├── FeedScreen.kt     # LazyColumn + PullToRefresh + nekonečný scroll + přednačítání
     ├── SettingsSheet.kt  # NSFW přepínače, jazyk, sync watchlistu, složka, cache, aktualizace
     ├── UpdateViewModel.kt # stav kontroly/stahování a předání instalatéru
@@ -93,10 +102,14 @@ Parsování stojí na marku FA: `figure[id^=sid-]` s `figcaption`, rating v clas
 
 ```bash
 ./gradlew :app:assembleDebug      # JDK 17+, AGP 9.5.1, Gradle 9.7.1, compileSdk 36
-./gradlew :app:testDebugUnitTest  # 28 testů: parser, feed, cookies, aktualizace
+./gradlew :app:testDebugUnitTest  # 30 unit testů: parser, feed, cookies, aktualizace
+./gradlew :app:assembleDebugAndroidTest  # Compose UI testy (ke spuštění potřebují zařízení)
+./gradlew :app:assembleRelease            # R8-minifikovaný, podepsaný release klíčem
 ```
 
-`local.properties` s `sdk.dir=...` použij lokálně; v CI stačí `ANDROID_HOME`.
+`local.properties` s `sdk.dir=...` použij lokálně; v CI stačí `ANDROID_HOME`. Build type
+`release` zapíná R8 (`proguard-rules.pro` potlačuje compile-time anotace Tinku); CI dál
+publikuje debug build jako `app-debug.apk`.
 
 ## CI
 

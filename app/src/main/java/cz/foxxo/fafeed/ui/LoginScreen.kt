@@ -40,7 +40,6 @@ import cz.foxxo.fafeed.data.FaClient
 import cz.foxxo.fafeed.data.FaCookies
 import cz.foxxo.fafeed.data.FaParser
 import kotlinx.coroutines.launch
-import org.json.JSONTokener
 
 /**
  * Sign-in runs entirely inside the WebView, because `www.furaffinity.net` is protected by a
@@ -114,7 +113,7 @@ fun LoginScreen(onLoggedIn: (cookies: String, user: String, userAgent: String) -
             verifyWithOkHttp(cookies)
             return
         }
-        view.evaluateJavascript(DOM_PROBE) { raw ->
+        view.evaluateJavascript(FA_DOM_PROBE) { raw ->
             when (val result = domResult(raw)) {
                 DOM_CHALLENGE -> message = challengeMsg
                 DOM_FORM -> message = notYetMsg
@@ -197,7 +196,7 @@ fun LoginScreen(onLoggedIn: (cookies: String, user: String, userAgent: String) -
                                 webView = view
                                 if (busy || checking) return
                                 checking = true
-                                view.evaluateJavascript(DOM_PROBE) { raw ->
+                                view.evaluateJavascript(FA_DOM_PROBE) { raw ->
                                     checking = false
                                     if (busy) return@evaluateJavascript
                                     val result = domResult(raw)
@@ -261,33 +260,4 @@ fun LoginScreen(onLoggedIn: (cookies: String, user: String, userAgent: String) -
             }
         }
     }
-}
-
-private const val DOM_USER = "USER:"
-private const val DOM_FORM = "FORM"
-private const val DOM_CHALLENGE = "CHALLENGE"
-private const val DOM_OTHER = "OTHER"
-
-/**
- * Runs in the page: a logged-in FA page renders the own avatar in `img.loggedin_user_avatar`,
- * the SSO form has a password input, and a Cloudflare interstitial has none of the FA markup.
- */
-private const val DOM_PROBE = """
-(function () {
-  var avatar = document.querySelector('img.loggedin_user_avatar');
-  var name = avatar ? (avatar.getAttribute('alt') || '').trim() : '';
-  if (name) return 'USER:' + name;
-  if (document.querySelector('input[type=password]')) return 'FORM';
-  if (document.querySelector('#challenge-form, #cf-challenge-running, #cf-please-wait, .cf-browser-verification')) return 'CHALLENGE';
-  var title = (document.title || '').toLowerCase();
-  if (title.indexOf('just a moment') >= 0 || title.indexOf('attention required') >= 0 ||
-      title.indexOf('checking your browser') >= 0 || title.indexOf('verify you are human') >= 0) return 'CHALLENGE';
-  return 'OTHER';
-})()
-"""
-
-private fun domResult(raw: String?): String {
-    if (raw.isNullOrBlank() || raw == "null") return DOM_OTHER
-    return runCatching { (JSONTokener(raw).nextValue() as? String) ?: DOM_OTHER }
-        .getOrDefault(DOM_OTHER)
 }

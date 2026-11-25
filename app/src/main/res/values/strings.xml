@@ -64,6 +64,14 @@
     <string name="login_challenge">FurAffinity is still checking your browser. Wait for the page above to finish, then tap the button again.</string>
     <string name="login_blocked">FurAffinity didn\'t let the app through (Cloudflare). Finish the check in the window above, then tap the button again.</string>
 
+    <!-- Cloudflare challenge -->
+    <string name="challenge_title">Verify in browser</string>
+    <string name="challenge_subtitle">Finish the Cloudflare check below, then continue.</string>
+    <string name="challenge_continue">Continue</string>
+    <string name="challenge_verifying">Verifying…</string>
+    <string name="challenge_wait">The check isn\'t finished yet. Complete it in the page above.</string>
+    <string name="challenge_failed">Couldn\'t verify. Try again.</string>
+
     <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="signed_in_as">Signed in as @%1$s</string>
@@ -72,6 +80,11 @@
     <string name="hide_nsfw_subtitle">Mature and adult posts won\'t appear in the feed</string>
     <string name="blur_nsfw">Blur NSFW previews</string>
     <string name="blur_nsfw_subtitle">Content is revealed on tap</string>
+    <string name="muted_users">Hidden authors</string>
+    <string name="muted_users_hint">Posts from these accounts won\'t appear in the feed</string>
+    <string name="no_muted_users">None</string>
+    <string name="mute_add">Add author</string>
+    <string name="mute_remove">Stop hiding %1$s</string>
     <string name="watchlist">Watchlist</string>
     <plurals name="followed_count">
         <item quantity="one">%1$d followed</item>

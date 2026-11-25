@@ -21,7 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cz.foxxo.fafeed.data.Prefs
 
-private enum class Screen { LOGIN, FEED, DETAIL, PROFILE }
+private enum class Screen { LOGIN, FEED, DETAIL, PROFILE, CHALLENGE }
 
 private data class UiRoute(
     val screen: Screen,
@@ -45,6 +45,7 @@ fun AppRoot() {
 
     val route = when {
         !loggedIn || vm.sessionExpired -> UiRoute(Screen.LOGIN)
+        vm.blocked -> UiRoute(Screen.CHALLENGE)
         detailId != null -> UiRoute(Screen.DETAIL, detailId)
         profileUser != null -> UiRoute(Screen.PROFILE, profileUser = profileUser)
         else -> UiRoute(Screen.FEED)
@@ -54,8 +55,10 @@ fun AppRoot() {
     AnimatedContent(
         targetState = route,
         transitionSpec = {
-            val forward = targetState.screen == Screen.DETAIL || targetState.screen == Screen.PROFILE
-            val backward = initialState.screen == Screen.DETAIL || initialState.screen == Screen.PROFILE
+            val forward = targetState.screen == Screen.DETAIL ||
+                targetState.screen == Screen.PROFILE || targetState.screen == Screen.CHALLENGE
+            val backward = initialState.screen == Screen.DETAIL ||
+                initialState.screen == Screen.PROFILE || initialState.screen == Screen.CHALLENGE
             val openingPost = forward && !backward
             val closingPost = backward && !forward
             when {
@@ -92,6 +95,11 @@ fun AppRoot() {
                     },
                 )
             }
+
+            Screen.CHALLENGE -> ChallengeScreen(
+                onResolved = { cookies, agent -> vm.resolveChallenge(cookies, agent) },
+                onCancel = { vm.acknowledgeBlocked() },
+            )
 
             Screen.PROFILE -> {
                 BackHandler { profileUser = null }

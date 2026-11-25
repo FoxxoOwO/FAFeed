@@ -7,6 +7,10 @@ the Android app.
 ## [Unreleased]
 
 ### Added
+- Cloudflare recovery screen: when sync is blocked, a WebView lets the user complete the
+  check manually and hands the merged cookies plus User-Agent back to the scraper.
+  The DOM probe is shared with the login screen (`WebAuth.kt`).
+- Hidden authors: a mute list in Settings filters out posts from selected accounts.
 - Author profiles: tapping an author in the feed or in a submission detail opens their
   full gallery, with a button to load older pages.
 - Search over loaded posts by author or title, plus rating filters that combine with
@@ -19,6 +23,12 @@ the Android app.
 - Unit tests for release parsing, version comparison and APK asset selection.
 
 ### Changed
+- Session cookies are stored in `EncryptedSharedPreferences` with automatic migration
+  from the old plaintext storage; a plain fallback is kept for devices without Keystore.
+- Enabled R8/minification for the `release` build type and signed it with the same
+  release key. CI still publishes the debug build type.
+- Added Compose UI smoke tests, and replaced deprecated `Icons.Rounded` variants with
+  their `AutoMirrored` counterparts.
 - Signing now uses a real release keystore supplied through `local.properties` locally
   and GitHub Secrets in CI. `app/debug.keystore` is only a fallback for builds without
   signing secrets.

@@ -68,6 +68,14 @@
     <string name="login_challenge">FurAffinity ještě ověřuje tvůj prohlížeč. Počkej, až se stránka nahoře dokončí, a klepni na tlačítko znovu.</string>
     <string name="login_blocked">FurAffinity appku nepustilo dál (Cloudflare). Dokonči ověření v okně nahoře a klepni na tlačítko znovu.</string>
 
+    <!-- Cloudflare ověření -->
+    <string name="challenge_title">Ověření v prohlížeči</string>
+    <string name="challenge_subtitle">Dokonči níže kontrolu Cloudflare a pak pokračuj.</string>
+    <string name="challenge_continue">Pokračovat</string>
+    <string name="challenge_verifying">Ověřuji…</string>
+    <string name="challenge_wait">Kontrola ještě není dokončená. Dokonči ji na stránce výše.</string>
+    <string name="challenge_failed">Ověření se nepodařilo. Zkus to znovu.</string>
+
     <!-- Settings -->
     <string name="settings_title">Nastavení</string>
     <string name="signed_in_as">Přihlášen jako @%1$s</string>
@@ -76,6 +84,11 @@
     <string name="hide_nsfw_subtitle">V feedu nebudou maturity ani adult příspěvky</string>
     <string name="blur_nsfw">Rozmazat NSFW náhledy</string>
     <string name="blur_nsfw_subtitle">Obsah se zobrazí až po klepnutí</string>
+    <string name="muted_users">Skrytí autoři</string>
+    <string name="muted_users_hint">Příspěvky těchto účtů se ve feedu neobjeví</string>
+    <string name="no_muted_users">Žádní</string>
+    <string name="mute_add">Přidat autora</string>
+    <string name="mute_remove">Přestat skrývat %1$s</string>
     <string name="watchlist">Watchlist</string>
     <plurals name="followed_count">
         <item quantity="one">%1$d sledovaný</item>

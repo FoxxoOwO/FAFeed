@@ -17,6 +17,14 @@ import cz.foxxo.fafeed.data.Prefs
 import cz.foxxo.fafeed.data.SyncMode
 import kotlinx.coroutines.launch
 
+/** Accepts "@Name", "name/" or a profile URL ending and stores a canonical lowercase name. */
+fun normalizeUser(raw: String): String = raw.trim()
+    .removePrefix("@")
+    .substringBefore('/')
+    .trim()
+    .lowercase()
+    .filter { it.isLetterOrDigit() || it == '_' || it == '-' || it == '.' }
+
 data class FeedState(
     val items: List<FeedItem> = emptyList(),
     val visibleCount: Int = 30,
@@ -35,16 +43,19 @@ data class FeedState(
     val query: String = "",
     /** Empty means all ratings, otherwise one of "general", "mature", "adult". */
     val rating: String = "",
+    /** Lowercased usernames hidden from the feed. */
+    val mutedUsers: Set<String> = emptySet(),
 ) {
     private val shown: List<FeedItem>
         get() = items.filter { item ->
             val matchesSafe = !safeOnly || !item.isNsfw
+            val matchesMute = mutedUsers.none { it.equals(item.author, ignoreCase = true) }
             val matchesRating = rating.isBlank() || item.rating.equals(rating, ignoreCase = true)
             val matchesQuery = query.isBlank() ||
                 item.title.contains(query, ignoreCase = true) ||
                 item.author.contains(query, ignoreCase = true) ||
                 item.authorDisplay.contains(query, ignoreCase = true)
-            matchesSafe && matchesRating && matchesQuery
+            matchesSafe && matchesMute && matchesRating && matchesQuery
         }
 
     val visibleItems: List<FeedItem> get() = shown.take(visibleCount)
@@ -67,12 +78,17 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
             blurNsfw = prefs.blurNsfw,
             followedCount = store.loadUsers().size,
             lastSyncAt = store.lastSyncAt,
+            mutedUsers = prefs.mutedUsers,
         )
     )
         private set
 
     /** Set when FA answers with the login wall – the UI shows the login screen again. */
     var sessionExpired by mutableStateOf(false)
+        private set
+
+    /** Set when Cloudflare blocks the request; the UI offers a WebView to finish the check. */
+    var blocked by mutableStateOf(false)
         private set
 
     private var started = false
@@ -121,6 +137,7 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
                 )
             } catch (t: Throwable) {
                 if (t is FaAuthException) sessionExpired = true
+                if (t is FaBlockedException) blocked = true
                 state = state.copy(
                     loading = false,
                     refreshing = false,
@@ -157,16 +174,42 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
         state = state.copy(rating = if (state.rating.equals(value, ignoreCase = true)) "" else value)
     }
 
+    fun muteUser(user: String) {
+        val name = normalizeUser(user)
+        if (name.isBlank()) return
+        prefs.mutedUsers = prefs.mutedUsers + name
+        state = state.copy(mutedUsers = prefs.mutedUsers)
+    }
+
+    fun unmuteUser(user: String) {
+        prefs.mutedUsers = prefs.mutedUsers - user.lowercase()
+        state = state.copy(mutedUsers = prefs.mutedUsers)
+    }
+
     fun logout() {
         prefs.clearSession()
-        state = FeedState()
+        state = FeedState(mutedUsers = prefs.mutedUsers)
         started = false
         syncing = false
         sessionExpired = true
+        blocked = false
     }
 
     fun acknowledgeExpired() {
         sessionExpired = false
+    }
+
+    fun acknowledgeBlocked() {
+        blocked = false
+    }
+
+    /** Resumes sync with cookies/UA obtained after the user solved the WebView challenge. */
+    fun resolveChallenge(cookies: String, userAgent: String) {
+        if (cookies.isBlank()) return
+        prefs.cookies = cookies
+        if (userAgent.isNotBlank()) prefs.userAgent = userAgent
+        blocked = false
+        refresh(full = false)
     }
 
     fun onLoggedIn(cookies: String, user: String, userAgent: String) {
@@ -174,7 +217,13 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
         prefs.user = user
         if (userAgent.isNotBlank()) prefs.userAgent = userAgent
         sessionExpired = false
-        state = FeedState(user = user, safeOnly = prefs.safeOnly, blurNsfw = prefs.blurNsfw)
+        blocked = false
+        state = FeedState(
+            user = user,
+            safeOnly = prefs.safeOnly,
+            blurNsfw = prefs.blurNsfw,
+            mutedUsers = prefs.mutedUsers,
+        )
         started = false
         start()
     }

@@ -45,6 +45,12 @@ social feed: posts from the accounts you follow, newest first, with endless scro
   a few cards ahead are prefetched. The size is shown in Settings and can be cleared.
 - **Animations** – feed ↔ detail transitions, card press feedback, a smooth NSFW veil
   fade, and a crossfade in the top bar subtitle.
+- **Cloudflare recovery** – when a sync is blocked, a WebView opens so you can finish the
+  security check manually; the resulting cookies and User-Agent are reused by the scraper.
+  There is no automated bypass of bot protection.
+- **Secure session** – the FurAffinity cookie is stored in `EncryptedSharedPreferences`;
+  existing plaintext cookies are migrated on first read.
+- **Hidden authors** – a mute list in Settings hides posts from selected accounts.
 - **Author profiles** – tap an author in the feed or in a post detail to open their full
   gallery with "Load older submissions" pagination.
 - **Search and filters** – search loaded posts by author or title and filter by rating
@@ -67,11 +73,14 @@ app/src/main/java/cz/foxxo/fafeed/
 │   ├── FeedRepository.kt # watchlist sync (galleries + cursors + rotation)
 │   ├── FeedStore.kt      # local store, JSON serialisation, merge/planner helpers
 │   ├── Models.kt         # FeedItem, FeedPage, SubmissionDetail
-│   └── Prefs.kt          # cookies, user, switches, cache, language
+│   ├── Prefs.kt          # cookies, user, switches, cache, language
+│   └── SecureStorage.kt  # encrypted cookie store + plaintext migration
 └── ui/
     ├── AppRoot.kt        # login / feed / detail routing
     ├── AppLocale.kt      # in-app language override
     ├── LoginScreen.kt    # WebView login + cookie verification
+    ├── ChallengeScreen.kt # manual Cloudflare check + cookie hand-back
+    ├── WebAuth.kt        # shared WebView DOM probe
     ├── FeedScreen.kt     # LazyColumn + PullToRefresh + endless scroll + prefetch
     ├── SettingsSheet.kt  # NSFW switches, language, watchlist sync, folder, cache, updates
     ├── UpdateViewModel.kt # update check/download state and install hand-off
@@ -93,10 +102,14 @@ classes `r-general|r-mature|r-adult`, the thumbnail
 
 ```bash
 ./gradlew :app:assembleDebug      # JDK 17+, AGP 9.5.1, Gradle 9.7.1, compileSdk 36
-./gradlew :app:testDebugUnitTest  # 28 tests: parser, feed logic, cookies, updater
+./gradlew :app:testDebugUnitTest  # 30 unit tests: parser, feed logic, cookies, updater
+./gradlew :app:assembleDebugAndroidTest  # Compose UI smoke tests (needs a device to run)
+./gradlew :app:assembleRelease            # R8-minified, signed with the release key
 ```
 
 Use a local `local.properties` with `sdk.dir=...`; in CI `ANDROID_HOME` is enough.
+The `release` build type enables R8 (`proguard-rules.pro` suppresses Tink's compile-time
+Error Prone annotations). CI still publishes the debug build type as `app-debug.apk`.
 
 ## CI
 
@@ -154,3 +167,5 @@ one-time uninstall (the app data is lost). All later releases can be updated in 
 - The watchlist cannot be edited in the app, it is only read to build the feed.
 - Update checks use the unauthenticated GitHub API (60 requests/hour per IP); automatic
   checks are throttled to once a day, manual checks are up to the user.
+- Cloudflare challenges cannot be solved automatically; the app only provides a WebView
+  for the user to complete the check, then reuses the resulting cookies.

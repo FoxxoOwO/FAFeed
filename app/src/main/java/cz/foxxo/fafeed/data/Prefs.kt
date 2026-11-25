@@ -4,10 +4,11 @@ import android.content.Context
 
 class Prefs(context: Context) {
     private val sp = context.getSharedPreferences("fafeed", Context.MODE_PRIVATE)
+    private val secure = SecureStorage(context)
 
     var cookies: String
-        get() = sp.getString("cookies", "").orEmpty()
-        set(value) = sp.edit().putString("cookies", value).apply()
+        get() = secure.cookies
+        set(value) { secure.cookies = value }
 
     var user: String
         get() = sp.getString("user", "").orEmpty()
@@ -83,7 +84,13 @@ class Prefs(context: Context) {
         get() = sp.getString("skipped_update", "").orEmpty()
         set(value) = sp.edit().putString("skipped_update", value).apply()
 
+    /** Lowercased usernames whose posts are hidden from the feed. */
+    var mutedUsers: Set<String>
+        get() = sp.getStringSet("muted_users", emptySet())?.toSet().orEmpty()
+        set(value) = sp.edit().putStringSet("muted_users", value).apply()
+
     fun clearSession() {
+        secure.clear()
         sp.edit().remove("cookies").remove("user").remove("cached_feed_v2")
             .remove("watch_users").remove("scan_state").remove("scan_index")
             .remove("last_sync_at").remove("users_fetched_at").apply()

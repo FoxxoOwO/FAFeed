@@ -157,6 +157,8 @@ fun FeedScreen(
             onSafeOnly = vm::setSafeOnly,
             onBlurNsfw = vm::setBlurNsfw,
             onSyncAll = vm::syncAll,
+            onMuteUser = vm::muteUser,
+            onUnmuteUser = vm::unmuteUser,
             onLogout = onLogout,
             onDismiss = { settingsOpen = false },
         )

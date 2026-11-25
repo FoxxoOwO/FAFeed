@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,15 +17,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Folder
-import androidx.compose.material.icons.rounded.Logout
-import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -62,6 +67,8 @@ fun SettingsSheet(
     onSafeOnly: (Boolean) -> Unit,
     onBlurNsfw: (Boolean) -> Unit,
     onSyncAll: () -> Unit,
+    onMuteUser: (String) -> Unit,
+    onUnmuteUser: (String) -> Unit,
     onLogout: () -> Unit,
     onDismiss: () -> Unit,
     lang: String = LANG_SYSTEM,
@@ -71,6 +78,7 @@ fun SettingsSheet(
     val prefs = remember { Prefs(context) }
     var folderName by remember { mutableStateOf(prefs.downloadTreeName) }
     var autoUpdate by remember { mutableStateOf(prefs.autoUpdate) }
+    var muteInput by remember { mutableStateOf("") }
 
     val selectedFolderLabel = stringResource(R.string.selected_folder)
     val app = context.applicationContext as? FaApp
@@ -129,6 +137,68 @@ fun SettingsSheet(
                 subtitle = stringResource(R.string.blur_nsfw_subtitle),
                 checked = state.blurNsfw,
                 onChange = onBlurNsfw,
+            )
+
+            Spacer(Modifier.height(10.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(14.dp))
+
+            Text(stringResource(R.string.muted_users), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.muted_users_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+            if (state.mutedUsers.isEmpty()) {
+                Text(
+                    stringResource(R.string.no_muted_users),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    state.mutedUsers.sorted().forEach { user ->
+                        FilterChip(
+                            selected = true,
+                            onClick = { onUnmuteUser(user) },
+                            label = { Text("@$user") },
+                            trailingIcon = {
+                                Icon(
+                                    Icons.Rounded.Close,
+                                    contentDescription = stringResource(R.string.mute_remove, user),
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            },
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = muteInput,
+                onValueChange = { muteInput = it },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                label = { Text(stringResource(R.string.mute_add)) },
+                placeholder = { Text("@username") },
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            onMuteUser(muteInput)
+                            muteInput = ""
+                        },
+                        enabled = normalizeUser(muteInput).isNotBlank(),
+                    ) {
+                        Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.mute_add))
+                    }
+                },
             )
 
             Spacer(Modifier.height(14.dp))
@@ -306,7 +376,7 @@ fun SettingsSheet(
                     .padding(vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(20.dp))
+                Icon(Icons.AutoMirrored.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(12.dp))
                 Text(stringResource(R.string.open_feed_on_fa), style = MaterialTheme.typography.bodyLarge)
             }
@@ -322,7 +392,7 @@ fun SettingsSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    Icons.Rounded.Logout,
+                    Icons.AutoMirrored.Rounded.Logout,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(20.dp),

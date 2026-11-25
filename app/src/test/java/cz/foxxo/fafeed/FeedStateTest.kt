@@ -2,6 +2,7 @@ package cz.foxxo.fafeed
 
 import cz.foxxo.fafeed.data.FeedItem
 import cz.foxxo.fafeed.ui.FeedState
+import cz.foxxo.fafeed.ui.normalizeUser
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -52,5 +53,20 @@ class FeedStateTest {
         assertEquals(emptyList<Long>(), FeedState(items = items, rating = "mature", safeOnly = true).visibleItems.map { it.id })
         assertEquals(listOf(1L), FeedState(items = items, safeOnly = true).visibleItems.map { it.id })
         assertEquals(emptyList<Long>(), FeedState(items = items, query = "nope").visibleItems.map { it.id })
+    }
+
+    @Test
+    fun `muted authors are hidden regardless of case`() {
+        val items = listOf(item(1, author = "Fox"), item(2, author = "other"))
+
+        assertEquals(listOf(2L), FeedState(items = items, mutedUsers = setOf("fox")).visibleItems.map { it.id })
+        assertEquals(emptyList<Long>(), FeedState(items = items, query = "fox", mutedUsers = setOf("FOX")).visibleItems.map { it.id })
+    }
+
+    @Test
+    fun `normalizeUser strips at sign and path`() {
+        assertEquals("foxxo", normalizeUser(" @Foxxo/ "))
+        assertEquals("foxxo", normalizeUser("FOXXO"))
+        assertEquals("", normalizeUser("@/"))
     }
 }
