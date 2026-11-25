@@ -19,6 +19,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,7 +42,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Visibility
@@ -59,6 +63,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -98,6 +105,7 @@ fun FeedScreen(
     vm: FeedViewModel,
     updateVm: UpdateViewModel,
     onOpenSubmission: (Long) -> Unit,
+    onOpenProfile: (String) -> Unit,
     onLogout: () -> Unit,
     lang: String = LANG_SYSTEM,
     onSetLang: (String) -> Unit = {},
@@ -128,6 +136,8 @@ fun FeedScreen(
         }
     }
     var settingsOpen by remember { mutableStateOf(false) }
+    var searchOpen by remember { mutableStateOf(false) }
+    val filtering = state.query.isNotBlank() || state.rating.isNotBlank()
 
     // Shows up once you scroll back up after reading further down the feed.
     val showJumpToTop by remember(listState) {
@@ -174,54 +184,125 @@ fun FeedScreen(
                     containerColor = MaterialTheme.colorScheme.background,
                 ),
                 title = {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (searchOpen) {
+                        TextField(
+                            value = state.query,
+                            onValueChange = vm::setQuery,
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.bodyLarge,
+                            placeholder = { Text(stringResource(R.string.search_hint)) },
+                            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                            trailingIcon = {
+                                if (state.query.isNotEmpty()) {
+                                    IconButton(onClick = { vm.setQuery("") }) {
+                                        Icon(
+                                            Icons.Rounded.Close,
+                                            contentDescription = stringResource(R.string.clear_search),
+                                        )
+                                    }
+                                }
+                            },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                            ),
+                        )
+                    } else {
+                        Column {
                             Text(
                                 "FA Feed",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                             )
-                        }
-                        val syncing = state.refreshing && state.progressTotal > 0
-                        val subtitle = when {
-                            syncing -> stringResource(
-                                R.string.syncing_progress,
-                                state.progressDone,
-                                state.progressTotal,
-                            )
+                            val syncing = state.refreshing && state.progressTotal > 0
+                            val subtitle = when {
+                                syncing -> stringResource(
+                                    R.string.syncing_progress,
+                                    state.progressDone,
+                                    state.progressTotal,
+                                )
 
-                            state.user.isNotBlank() -> "@${state.user}"
-                            else -> ""
-                        }
-                        AnimatedContent(
-                            targetState = subtitle,
-                            transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(120)) },
-                            label = "subtitle",
-                        ) { text ->
-                            Text(
-                                text,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = if (syncing) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                            )
+                                state.user.isNotBlank() -> "@${state.user}"
+                                else -> ""
+                            }
+                            AnimatedContent(
+                                targetState = subtitle,
+                                transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(120)) },
+                                label = "subtitle",
+                            ) { text ->
+                                Text(
+                                    text,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (syncing) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                )
+                            }
                         }
                     }
                 },
                 actions = {
-                    IconButton(onClick = { vm.refresh() }) {
-                        Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.refresh))
-                    }
-                    IconButton(onClick = { settingsOpen = true }) {
-                        Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.settings))
+                    if (searchOpen) {
+                        IconButton(onClick = { searchOpen = false }) {
+                            Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.close_search))
+                        }
+                    } else {
+                        IconButton(onClick = { searchOpen = true }) {
+                            Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.search))
+                        }
+                        IconButton(onClick = { vm.refresh() }) {
+                            Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.refresh))
+                        }
+                        IconButton(onClick = { settingsOpen = true }) {
+                            Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.settings))
+                        }
                     }
                 },
             )
         },
     ) { padding ->
-        val shouldLoadMore by remember(state.visibleCount, state.visibleItems.size) {
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize(),
+        ) {
+            if (searchOpen || filtering) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    FilterChip(
+                        selected = state.rating.isBlank(),
+                        onClick = { vm.setRating("") },
+                        label = { Text(stringResource(R.string.filter_all)) },
+                    )
+                    listOf("general", "mature", "adult").forEach { r ->
+                        FilterChip(
+                            selected = state.rating.equals(r, ignoreCase = true),
+                            onClick = { vm.setRating(r) },
+                            label = { Text(ratingLabel(r)) },
+                        )
+                    }
+                    if (filtering) {
+                        Text(
+                            stringResource(R.string.search_result_count, state.visibleItems.size, state.totalShown),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            val shouldLoadMore by remember(state.visibleCount, state.visibleItems.size) {
             derivedStateOf {
                 val info = listState.layoutInfo
                 val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: -1
@@ -235,9 +316,7 @@ fun FeedScreen(
         PullToRefreshBox(
             isRefreshing = state.refreshing,
             onRefresh = { vm.refresh() },
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
         ) {
             when {
                 state.loading && state.items.isEmpty() -> CenterBox {
@@ -247,7 +326,8 @@ fun FeedScreen(
                 state.visibleItems.isEmpty() -> CenterBox {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            state.error ?: if (state.followedCount > 0) {
+                            if (filtering) stringResource(R.string.search_no_results)
+                            else state.error ?: if (state.followedCount > 0) {
                                 pluralStringResource(
                                     R.plurals.empty_following,
                                     state.followedCount,
@@ -261,7 +341,18 @@ fun FeedScreen(
                             modifier = Modifier.padding(horizontal = 32.dp),
                         )
                         Spacer(Modifier.height(12.dp))
-                        TextButton(onClick = { vm.refresh() }) { Text(stringResource(R.string.retry)) }
+                        TextButton(
+                            onClick = {
+                                if (filtering) {
+                                    vm.setQuery("")
+                                    vm.setRating("")
+                                } else {
+                                    vm.refresh()
+                                }
+                            },
+                        ) {
+                            Text(stringResource(if (filtering) R.string.search_clear else R.string.retry))
+                        }
                     }
                 }
 
@@ -290,6 +381,7 @@ fun FeedScreen(
                             item = item,
                             blurNsfw = state.blurNsfw,
                             onOpen = { onOpenSubmission(item.id) },
+                            onOpenProfile = onOpenProfile,
                             modifier = Modifier.animateItem(),
                         )
                     }
@@ -328,6 +420,7 @@ fun FeedScreen(
                 }
             }
         }
+        }
     }
 }
 
@@ -344,6 +437,7 @@ fun FeedCard(
     item: FeedItem,
     blurNsfw: Boolean,
     onOpen: () -> Unit,
+    onOpenProfile: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -394,7 +488,11 @@ fun FeedCard(
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                 )
                 Spacer(Modifier.width(10.dp))
-                Column(modifier = Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { onOpenProfile(item.author) },
+                ) {
                     Text(
                         item.authorDisplay.ifBlank { item.author },
                         style = MaterialTheme.typography.titleSmall,

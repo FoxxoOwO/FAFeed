@@ -7,6 +7,11 @@ the Android app.
 ## [Unreleased]
 
 ### Added
+- Author profiles: tapping an author in the feed or in a submission detail opens their
+  full gallery, with a button to load older pages.
+- Search over loaded posts by author or title, plus rating filters that combine with
+  safe mode. The search field replaces the top bar title; the empty-state button clears
+  both filters.
 - Automatic update checks against the latest GitHub release. The app checks once a day on
   startup (configurable in Settings), downloads the new APK with visible progress and
   hands it to the system installer. A manual check is available in Settings.

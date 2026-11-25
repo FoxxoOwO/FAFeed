@@ -31,9 +31,21 @@ data class FeedState(
     val followedCount: Int = 0,
     val lastSyncAt: Long = 0L,
     val addedLastSync: Int = 0,
+    /** Local search over the posts already loaded from the feed. */
+    val query: String = "",
+    /** Empty means all ratings, otherwise one of "general", "mature", "adult". */
+    val rating: String = "",
 ) {
     private val shown: List<FeedItem>
-        get() = if (safeOnly) items.filter { !it.isNsfw } else items
+        get() = items.filter { item ->
+            val matchesSafe = !safeOnly || !item.isNsfw
+            val matchesRating = rating.isBlank() || item.rating.equals(rating, ignoreCase = true)
+            val matchesQuery = query.isBlank() ||
+                item.title.contains(query, ignoreCase = true) ||
+                item.author.contains(query, ignoreCase = true) ||
+                item.authorDisplay.contains(query, ignoreCase = true)
+            matchesSafe && matchesRating && matchesQuery
+        }
 
     val visibleItems: List<FeedItem> get() = shown.take(visibleCount)
     val hasMore: Boolean get() = shown.size > visibleItems.size
@@ -134,6 +146,15 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
     fun setBlurNsfw(value: Boolean) {
         prefs.blurNsfw = value
         state = state.copy(blurNsfw = value)
+    }
+
+    fun setQuery(value: String) {
+        state = state.copy(query = value)
+    }
+
+    /** Passing the already selected rating clears the filter. */
+    fun setRating(value: String) {
+        state = state.copy(rating = if (state.rating.equals(value, ignoreCase = true)) "" else value)
     }
 
     fun logout() {

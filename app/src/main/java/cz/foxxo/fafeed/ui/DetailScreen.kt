@@ -72,7 +72,7 @@ import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailScreen(id: Long, onBack: () -> Unit) {
+fun DetailScreen(id: Long, onBack: () -> Unit, onOpenProfile: (String) -> Unit = {}) {
     val context = LocalContext.current
     val prefs = remember { Prefs(context) }
     val client = remember { FaClient(userAgentProvider = { prefs.effectiveUserAgent }) { prefs.cookies } }
@@ -154,6 +154,7 @@ fun DetailScreen(id: Long, onBack: () -> Unit) {
                     cookies = prefs.cookies,
                     client = client,
                     downloadTreeUri = prefs.downloadTreeUri,
+                    onOpenProfile = onOpenProfile,
                     modifier = Modifier.padding(padding),
                 )
             }
@@ -168,6 +169,7 @@ private fun DetailContent(
     cookies: String,
     client: FaClient,
     downloadTreeUri: String,
+    onOpenProfile: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -234,7 +236,10 @@ private fun DetailContent(
 
             Spacer(Modifier.height(10.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.clickable { onOpenProfile(detail.author) },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 AsyncImage(
                     model = avatarUrl(detail.author),
                     contentDescription = null,

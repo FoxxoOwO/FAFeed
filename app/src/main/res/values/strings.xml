@@ -11,6 +11,14 @@
     <string name="nsfw_hidden">NSFW – tap to view</string>
     <string name="untitled">(untitled)</string>
     <string name="open_on_fa">Open on FurAffinity</string>
+    <string name="search">Search</string>
+    <string name="search_hint">Author or title</string>
+    <string name="close_search">Close search</string>
+    <string name="clear_search">Clear search</string>
+    <string name="filter_all">All ratings</string>
+    <string name="search_no_results">No loaded posts match your search. Filters only apply to posts already loaded.</string>
+    <string name="search_clear">Clear filters</string>
+    <string name="search_result_count">Showing %1$d of %2$d</string>
     <plurals name="feed_end">
         <item quantity="one">End of feed • %1$d post from %2$d followed</item>
         <item quantity="other">End of feed • %1$d posts from %2$d followed</item>
@@ -39,6 +47,12 @@
     <string name="image_load_failed">Couldn\'t load the image</string>
     <string name="zoom_hint">Double tap to zoom, drag to pan</string>
     <string name="close">Close</string>
+
+    <!-- Author profile -->
+    <string name="profile_count">%1$d submissions</string>
+    <string name="profile_empty">No submissions found for this account.</string>
+    <string name="profile_end">End of gallery</string>
+    <string name="load_more">Load older submissions</string>
 
     <!-- Login -->
     <string name="login_title">Sign in</string>

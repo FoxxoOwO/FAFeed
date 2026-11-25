@@ -45,6 +45,10 @@ scrollováním.
   dopředu se přednačítá. Velikost je vidět v Nastavení a jde smazat.
 - **Animace** – přechod feed ↔ detail, zmáčknutí karty, plynulé rozplynutí NSFW závoje
   a crossfade podtitulku v top baru.
+- **Profily autorů** – klepnutím na autora ve feedu nebo v detailu se otevře celá jeho
+  galerie s možností načítat starší příspěvky.
+- **Hledání a filtry** – prohledávání načtených příspěvků podle autora nebo názvu a filtr
+  podle ratingu (GENERAL / MATURE / ADULT). Filtry jsou lokální a kombinují se safe režimem.
 - **Aktualizace** – jednou denně při startu appka zkontroluje nejnovější GitHub release,
   stáhne nový APK a nabídne instalaci. V Nastavení je ruční kontrola a vypínač; „Později“
   přeskočí konkrétní verzi. Více v anglickém [README](README.md#updates).
@@ -73,6 +77,8 @@ app/src/main/java/cz/foxxo/fafeed/
     ├── UpdateViewModel.kt # stav kontroly/stahování a předání instalatéru
     ├── UpdateDialog.kt   # dialog aktualizace, progress, instalace
     ├── DetailScreen.kt
+    ├── ProfileScreen.kt  # galerie autora se stránkováním
+    ├── ProfileViewModel.kt
     ├── ZoomableImageDialog.kt
     ├── UiUtils.kt        # ukládání obrázků, otevírání FA v prohlížeči
     ├── FeedViewModel.kt
@@ -87,7 +93,7 @@ Parsování stojí na marku FA: `figure[id^=sid-]` s `figcaption`, rating v clas
 
 ```bash
 ./gradlew :app:assembleDebug      # JDK 17+, AGP 9.5.1, Gradle 9.7.1, compileSdk 36
-./gradlew :app:testDebugUnitTest  # 26 testů: parser, feed, cookies, aktualizace
+./gradlew :app:testDebugUnitTest  # 28 testů: parser, feed, cookies, aktualizace
 ```
 
 `local.properties` s `sdk.dir=...` použij lokálně; v CI stačí `ANDROID_HOME`.

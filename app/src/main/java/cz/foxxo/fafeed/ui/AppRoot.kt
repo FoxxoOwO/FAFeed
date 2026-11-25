@@ -21,9 +21,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cz.foxxo.fafeed.data.Prefs
 
-private enum class Screen { LOGIN, FEED, DETAIL }
+private enum class Screen { LOGIN, FEED, DETAIL, PROFILE }
 
-private data class UiRoute(val screen: Screen, val detailId: Long? = null)
+private data class UiRoute(
+    val screen: Screen,
+    val detailId: Long? = null,
+    val profileUser: String? = null,
+)
 
 @Composable
 fun AppRoot() {
@@ -34,6 +38,7 @@ fun AppRoot() {
     val prefs = remember { Prefs(context) }
     var loggedIn by remember { mutableStateOf(prefs.cookies.isNotBlank()) }
     var detailId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var profileUser by rememberSaveable { mutableStateOf<String?>(null) }
     var lang by remember { mutableStateOf(prefs.lang) }
     // Kept here (not in FeedScreen) so the feed keeps its scroll position while a post is open.
     val feedListState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
@@ -41,6 +46,7 @@ fun AppRoot() {
     val route = when {
         !loggedIn || vm.sessionExpired -> UiRoute(Screen.LOGIN)
         detailId != null -> UiRoute(Screen.DETAIL, detailId)
+        profileUser != null -> UiRoute(Screen.PROFILE, profileUser = profileUser)
         else -> UiRoute(Screen.FEED)
     }
 
@@ -48,8 +54,10 @@ fun AppRoot() {
     AnimatedContent(
         targetState = route,
         transitionSpec = {
-            val openingPost = targetState.screen == Screen.DETAIL && initialState.screen == Screen.FEED
-            val closingPost = initialState.screen == Screen.DETAIL && targetState.screen == Screen.FEED
+            val forward = targetState.screen == Screen.DETAIL || targetState.screen == Screen.PROFILE
+            val backward = initialState.screen == Screen.DETAIL || initialState.screen == Screen.PROFILE
+            val openingPost = forward && !backward
+            val closingPost = backward && !forward
             when {
                 openingPost -> (slideInHorizontally(tween(260)) { it / 5 } + fadeIn(tween(200))) togetherWith
                     (slideOutHorizontally(tween(260)) { -it / 12 } + fadeOut(tween(160)))
@@ -67,13 +75,31 @@ fun AppRoot() {
                 onLoggedIn = { cookies, user, userAgent ->
                     vm.acknowledgeExpired()
                     vm.onLoggedIn(cookies, user, userAgent)
+                    profileUser = null
+                    detailId = null
                     loggedIn = true
                 },
             )
 
             Screen.DETAIL -> {
                 BackHandler { detailId = null }
-                DetailScreen(id = current.detailId ?: 0L, onBack = { detailId = null })
+                DetailScreen(
+                    id = current.detailId ?: 0L,
+                    onBack = { detailId = null },
+                    onOpenProfile = { user ->
+                        detailId = null
+                        profileUser = user
+                    },
+                )
+            }
+
+            Screen.PROFILE -> {
+                BackHandler { profileUser = null }
+                ProfileScreen(
+                    user = current.profileUser.orEmpty(),
+                    onBack = { profileUser = null },
+                    onOpenSubmission = { detailId = it },
+                )
             }
 
             Screen.FEED -> FeedScreen(
@@ -83,6 +109,7 @@ fun AppRoot() {
                 lang = lang,
                 onSetLang = { prefs.lang = it; lang = it },
                 onOpenSubmission = { detailId = it },
+                onOpenProfile = { profileUser = it },
                 onLogout = {
                     runCatching {
                         CookieManager.getInstance().removeAllCookies(null)
@@ -90,6 +117,8 @@ fun AppRoot() {
                     }
                     vm.logout()
                     vm.acknowledgeExpired()
+                    profileUser = null
+                    detailId = null
                     loggedIn = false
                 },
             )

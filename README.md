@@ -45,6 +45,10 @@ social feed: posts from the accounts you follow, newest first, with endless scro
   a few cards ahead are prefetched. The size is shown in Settings and can be cleared.
 - **Animations** – feed ↔ detail transitions, card press feedback, a smooth NSFW veil
   fade, and a crossfade in the top bar subtitle.
+- **Author profiles** – tap an author in the feed or in a post detail to open their full
+  gallery with "Load older submissions" pagination.
+- **Search and filters** – search loaded posts by author or title and filter by rating
+  (GENERAL / MATURE / ADULT). Filters are local and combine with safe mode.
 - **Updates** – once a day on startup the app checks the latest GitHub release, downloads
   the new APK in the background and lets you install it with one tap. A manual check and
   an on/off switch live in Settings; "Later" skips that particular version.
@@ -73,6 +77,8 @@ app/src/main/java/cz/foxxo/fafeed/
     ├── UpdateViewModel.kt # update check/download state and install hand-off
     ├── UpdateDialog.kt   # update prompt, progress and install confirmation
     ├── DetailScreen.kt
+    ├── ProfileScreen.kt  # author gallery with pagination
+    ├── ProfileViewModel.kt
     ├── ZoomableImageDialog.kt
     ├── UiUtils.kt        # saving images, opening FA in a browser
     ├── FeedViewModel.kt
@@ -87,7 +93,7 @@ classes `r-general|r-mature|r-adult`, the thumbnail
 
 ```bash
 ./gradlew :app:assembleDebug      # JDK 17+, AGP 9.5.1, Gradle 9.7.1, compileSdk 36
-./gradlew :app:testDebugUnitTest  # 26 tests: parser, feed logic, cookies, updater
+./gradlew :app:testDebugUnitTest  # 28 tests: parser, feed logic, cookies, updater
 ```
 
 Use a local `local.properties` with `sdk.dir=...`; in CI `ANDROID_HOME` is enough.
