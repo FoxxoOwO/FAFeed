@@ -69,6 +69,20 @@ class Prefs(context: Context) {
         get() = sp.getString("lang", "system").orEmpty()
         set(value) = sp.edit().putString("lang", value).apply()
 
+    /** Automatic update check once a day on app start. Enabled by default. */
+    var autoUpdate: Boolean
+        get() = sp.getBoolean("auto_update", true)
+        set(value) = sp.edit().putBoolean("auto_update", value).apply()
+
+    var lastUpdateCheck: Long
+        get() = sp.getLong("last_update_check", 0L)
+        set(value) = sp.edit().putLong("last_update_check", value).apply()
+
+    /** Tag of a release the user chose to skip; it will not be offered automatically again. */
+    var skippedUpdateVersion: String
+        get() = sp.getString("skipped_update", "").orEmpty()
+        set(value) = sp.edit().putString("skipped_update", value).apply()
+
     fun clearSession() {
         sp.edit().remove("cookies").remove("user").remove("cached_feed_v2")
             .remove("watch_users").remove("scan_state").remove("scan_index")

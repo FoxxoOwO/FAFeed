@@ -11,12 +11,24 @@ android {
         applicationId = "cz.foxxo.fafeed"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.1.2"
+        versionCode = 5
+        versionName = "1.2.0"
+    }
+
+    // Shared debug key (local builds + CI) so an installed release can be updated
+    // without an uninstall; the runner's generated debug key changed every build.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     compileOptions {

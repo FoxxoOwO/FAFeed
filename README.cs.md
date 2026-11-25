@@ -1,6 +1,6 @@
 # FA Feed
 
-_English? See [README.md](README.md)._
+_English? See [README.md](README.md)._ Seznam změn: [CHANGELOG.md](CHANGELOG.md) (anglicky).
 
 Nativní Android aplikace (Kotlin + Jetpack Compose), která z FurAffinity udělá klasický
 sociální feed: posty od sledovaných uživatelů, nejnovější nahoře, s nekonečným
@@ -45,6 +45,9 @@ scrollováním.
   dopředu se přednačítá. Velikost je vidět v Nastavení a jde smazat.
 - **Animace** – přechod feed ↔ detail, zmáčknutí karty, plynulé rozplynutí NSFW závoje
   a crossfade podtitulku v top baru.
+- **Aktualizace** – jednou denně při startu appka zkontroluje nejnovější GitHub release,
+  stáhne nový APK a nabídne instalaci. V Nastavení je ruční kontrola a vypínač; „Později“
+  přeskočí konkrétní verzi. Více v anglickém [README](README.md#updates).
 
 ## Architektura
 
@@ -55,6 +58,8 @@ app/src/main/java/cz/foxxo/fafeed/
 ├── data/
 │   ├── FaParser.kt       # jsoup parser FA "beta" layoutu (bez Android závislostí)
 │   ├── FaClient.kt       # OkHttp + cookies
+│   ├── UpdateChecker.kt  # GitHub releases API, porovnání verzí, APK asset
+│   ├── UpdateRepository.kt # stažení APK do cache s progressem
 │   ├── FeedRepository.kt # synchronizace watchlistu (galerie + kurzory + rotace)
 │   ├── FeedStore.kt      # lokální store, JSON serializace, merge/planner helpery
 │   ├── Models.kt         # FeedItem, FeedPage, SubmissionDetail
@@ -64,7 +69,9 @@ app/src/main/java/cz/foxxo/fafeed/
     ├── AppLocale.kt      # přepnutí jazyka v appce
     ├── LoginScreen.kt    # WebView login + ověření cookies
     ├── FeedScreen.kt     # LazyColumn + PullToRefresh + nekonečný scroll + přednačítání
-    ├── SettingsSheet.kt  # NSFW přepínače, jazyk, sync watchlistu, složka, cache
+    ├── SettingsSheet.kt  # NSFW přepínače, jazyk, sync watchlistu, složka, cache, aktualizace
+    ├── UpdateViewModel.kt # stav kontroly/stahování a předání instalatéru
+    ├── UpdateDialog.kt   # dialog aktualizace, progress, instalace
     ├── DetailScreen.kt
     ├── ZoomableImageDialog.kt
     ├── UiUtils.kt        # ukládání obrázků, otevírání FA v prohlížeči
@@ -79,8 +86,8 @@ Parsování stojí na marku FA: `figure[id^=sid-]` s `figcaption`, rating v clas
 ## Build
 
 ```bash
-./gradlew :app:assembleDebug      # JDK 17+, AGP 9.4.1, Gradle 9.7.1, compileSdk 36
-./gradlew :app:testDebugUnitTest  # 15 testů: parser + logika watchlist feedu
+./gradlew :app:assembleDebug      # JDK 17+, AGP 9.5.1, Gradle 9.7.1, compileSdk 36
+./gradlew :app:testDebugUnitTest  # 26 testů: parser, feed, cookies, aktualizace
 ```
 
 `local.properties` s `sdk.dir=...` použij lokálně; v CI stačí `ANDROID_HOME`.
@@ -91,8 +98,10 @@ GitHub Actions (`.github/workflows/android.yml`) při každém pushi do `main`, 
 spuštění spustí unit testy, sestaví debug APK a nahraje ho jako artifact
 `FAFeed-debug-apk`. Když pushneš tag `v*`, APK se přiloží i k GitHub Release.
 
-APK z releasů je podepsaný debug klíčem z CI, takže se nedá nainstalovat přes debug APK
-builděný lokálně – ten je potřeba nejdřív odinstalovat.
+Lokální i CI buildy používají stejný klíč uložený v repozitáři (`app/debug.keystore`),
+takže nainstalovanou APK jde aktualizovat přímo v aplikaci. U verzí do 1.1.2 byl klíč
+vygenerovaný v CI pokaždý jiný, takže první přechod na nový klíč vyžaduje odinstalaci
+(a ztrátu dat appky).
 
 ## Omezení
 

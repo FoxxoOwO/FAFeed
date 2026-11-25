@@ -1,6 +1,6 @@
 # FA Feed
 
-_Česky? Přečti si [README.cs.md](README.cs.md)._
+_Česky? Přečti si [README.cs.md](README.cs.md)._ Release notes: [CHANGELOG.md](CHANGELOG.md).
 
 Native Android app (Kotlin + Jetpack Compose) that turns FurAffinity into a classic
 social feed: posts from the accounts you follow, newest first, with endless scrolling.
@@ -45,6 +45,9 @@ social feed: posts from the accounts you follow, newest first, with endless scro
   a few cards ahead are prefetched. The size is shown in Settings and can be cleared.
 - **Animations** – feed ↔ detail transitions, card press feedback, a smooth NSFW veil
   fade, and a crossfade in the top bar subtitle.
+- **Updates** – once a day on startup the app checks the latest GitHub release, downloads
+  the new APK in the background and lets you install it with one tap. A manual check and
+  an on/off switch live in Settings; "Later" skips that particular version.
 
 ## Architecture
 
@@ -55,6 +58,8 @@ app/src/main/java/cz/foxxo/fafeed/
 ├── data/
 │   ├── FaParser.kt       # jsoup parser for the FA "beta" layout (no Android deps)
 │   ├── FaClient.kt       # OkHttp + cookies
+│   ├── UpdateChecker.kt  # GitHub releases API, version comparison, APK asset parsing
+│   ├── UpdateRepository.kt # APK download into the app cache with progress
 │   ├── FeedRepository.kt # watchlist sync (galleries + cursors + rotation)
 │   ├── FeedStore.kt      # local store, JSON serialisation, merge/planner helpers
 │   ├── Models.kt         # FeedItem, FeedPage, SubmissionDetail
@@ -64,7 +69,9 @@ app/src/main/java/cz/foxxo/fafeed/
     ├── AppLocale.kt      # in-app language override
     ├── LoginScreen.kt    # WebView login + cookie verification
     ├── FeedScreen.kt     # LazyColumn + PullToRefresh + endless scroll + prefetch
-    ├── SettingsSheet.kt  # NSFW switches, language, watchlist sync, folder, cache
+    ├── SettingsSheet.kt  # NSFW switches, language, watchlist sync, folder, cache, updates
+    ├── UpdateViewModel.kt # update check/download state and install hand-off
+    ├── UpdateDialog.kt   # update prompt, progress and install confirmation
     ├── DetailScreen.kt
     ├── ZoomableImageDialog.kt
     ├── UiUtils.kt        # saving images, opening FA in a browser
@@ -79,8 +86,8 @@ classes `r-general|r-mature|r-adult`, the thumbnail
 ## Build
 
 ```bash
-./gradlew :app:assembleDebug      # JDK 17+, AGP 9.4.1, Gradle 9.7.1, compileSdk 36
-./gradlew :app:testDebugUnitTest  # 15 tests: parser + watchlist feed logic
+./gradlew :app:assembleDebug      # JDK 17+, AGP 9.5.1, Gradle 9.7.1, compileSdk 36
+./gradlew :app:testDebugUnitTest  # 26 tests: parser, feed logic, cookies, updater
 ```
 
 Use a local `local.properties` with `sdk.dir=...`; in CI `ANDROID_HOME` is enough.
@@ -92,8 +99,31 @@ requests and on manual dispatch: it runs the unit tests, builds the debug APK an
 it as the `FAFeed-debug-apk` artifact. Pushing a `v*` tag also attaches the APK to a
 GitHub Release.
 
-Release APKs are debug-signed with the CI keystore, so they cannot upgrade over a debug
-APK you built locally – uninstall that one first.
+Local builds and CI builds use the same committed debug key (`app/debug.keystore`), so
+an installed APK can be updated in place by the in-app updater.
+
+## Updates
+
+The updater talks to `https://api.github.com/repos/FoxxoOwO/FAFeed/releases/latest`
+(no FurAffinity cookies are sent there) and looks for an `.apk` asset in the release.
+The tag (`v1.2.0`) is compared numerically with the app's `versionName`; if it is newer:
+
+1. On startup, at most once per 24 hours, a dialog offers **Download and install**.
+   Settings has a manual **Check for updates** button and an on/off switch for the
+   automatic check. **Later** remembers the skipped tag and does not offer it again.
+2. The APK is streamed into the app's own cache (`cacheDir/updates`) with a progress
+   indicator; no storage permission is required.
+3. The file is handed to the system installer via a `FileProvider` URI.
+
+Android does not allow a normal app to install updates silently, so the last step always
+shows the system confirmation dialog. On Android 8+ the app also needs "Install unknown
+apps" to be allowed for FA Feed; the updater opens that system setting if it is missing.
+`REQUEST_INSTALL_PACKAGES` is declared in the manifest.
+
+**Note:** versions up to 1.1.2 were signed with a keystore generated on the CI runner,
+which changed from build to build. Updating from one of those builds to a release using
+`app/debug.keystore` requires a one-time uninstall (the app data is lost). All later
+releases can be updated in place.
 
 ## Limitations
 
@@ -103,3 +133,5 @@ APK you built locally – uninstall that one first.
 - The account must have the new (beta) theme enabled in the FA settings – the selectors
   come from it.
 - The watchlist cannot be edited in the app, it is only read to build the feed.
+- Update checks use the unauthenticated GitHub API (60 requests/hour per IP); automatic
+  checks are throttled to once a day, manual checks are up to the user.

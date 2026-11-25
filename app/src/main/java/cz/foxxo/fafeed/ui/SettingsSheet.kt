@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import cz.foxxo.fafeed.BuildConfig
 import cz.foxxo.fafeed.R
 import androidx.compose.ui.unit.dp
 import androidx.documentfile.provider.DocumentFile
@@ -57,6 +58,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun SettingsSheet(
     state: FeedState,
+    updateVm: UpdateViewModel,
     onSafeOnly: (Boolean) -> Unit,
     onBlurNsfw: (Boolean) -> Unit,
     onSyncAll: () -> Unit,
@@ -68,6 +70,7 @@ fun SettingsSheet(
     val context = LocalContext.current
     val prefs = remember { Prefs(context) }
     var folderName by remember { mutableStateOf(prefs.downloadTreeName) }
+    var autoUpdate by remember { mutableStateOf(prefs.autoUpdate) }
 
     val selectedFolderLabel = stringResource(R.string.selected_folder)
     val app = context.applicationContext as? FaApp
@@ -246,6 +249,47 @@ fun SettingsSheet(
                 },
             ) {
                 Text(stringResource(R.string.clear_cache))
+            }
+
+            Spacer(Modifier.height(10.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(14.dp))
+
+            Text(stringResource(R.string.updates_section), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.current_version, BuildConfig.VERSION_NAME),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            SettingSwitch(
+                title = stringResource(R.string.auto_update),
+                subtitle = stringResource(R.string.auto_update_subtitle),
+                checked = autoUpdate,
+                onChange = {
+                    autoUpdate = it
+                    updateVm.setAutoUpdate(it)
+                },
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = { updateVm.checkNow() }, enabled = !updateVm.state.checking && !updateVm.state.downloading) {
+                    Text(stringResource(if (updateVm.state.checking) R.string.update_checking else R.string.check_updates))
+                }
+                if (updateVm.state.release != null) {
+                    TextButton(onClick = { updateVm.showPrompt() }) {
+                        Text(stringResource(R.string.update_available_short))
+                    }
+                }
+            }
+            updateVm.state.notice?.let {
+                Text(
+                    stringResource(it),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
 
             Spacer(Modifier.height(10.dp))

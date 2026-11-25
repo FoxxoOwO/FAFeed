@@ -96,6 +96,7 @@ import cz.foxxo.fafeed.ui.theme.ratingLabel
 @Composable
 fun FeedScreen(
     vm: FeedViewModel,
+    updateVm: UpdateViewModel,
     onOpenSubmission: (Long) -> Unit,
     onLogout: () -> Unit,
     lang: String = LANG_SYSTEM,
@@ -139,6 +140,7 @@ fun FeedScreen(
 
     if (settingsOpen) {
         SettingsSheet(
+            updateVm = updateVm,
             lang = lang,
             onSetLang = onSetLang,
             state = state,

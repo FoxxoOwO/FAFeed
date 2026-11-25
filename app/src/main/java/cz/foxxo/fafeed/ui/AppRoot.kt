@@ -11,6 +11,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,6 +29,8 @@ private data class UiRoute(val screen: Screen, val detailId: Long? = null)
 fun AppRoot() {
     val context = LocalContext.current
     val vm: FeedViewModel = viewModel()
+    val updateVm: UpdateViewModel = viewModel()
+    LaunchedEffect(Unit) { updateVm.autoCheckIfDue() }
     val prefs = remember { Prefs(context) }
     var loggedIn by remember { mutableStateOf(prefs.cookies.isNotBlank()) }
     var detailId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -75,6 +78,7 @@ fun AppRoot() {
 
             Screen.FEED -> FeedScreen(
                 vm = vm,
+                updateVm = updateVm,
                 listState = feedListState,
                 lang = lang,
                 onSetLang = { prefs.lang = it; lang = it },
@@ -91,5 +95,6 @@ fun AppRoot() {
             )
         }
     }
+    UpdateDialog(vm = updateVm)
     }
 }

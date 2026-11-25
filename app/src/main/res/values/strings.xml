@@ -76,6 +76,27 @@
     <string name="cache_counting">counting…</string>
     <string name="cache_usage">%1$s of %2$s</string>
     <string name="clear_cache">Clear thumbnail cache</string>
+    <!-- Updates -->
+    <string name="updates_section">Updates</string>
+    <string name="current_version">Version %1$s</string>
+    <string name="auto_update">Check automatically</string>
+    <string name="auto_update_subtitle">Once a day when the app starts</string>
+    <string name="check_updates">Check for updates</string>
+    <string name="update_checking">Checking…</string>
+    <string name="update_up_to_date">You are on the latest version.</string>
+    <string name="update_check_failed">Couldn\'t check for updates.</string>
+    <string name="update_available_short">Update available</string>
+    <string name="update_available">Update available</string>
+    <string name="update_message">Version %1$s is ready. Download and install it to get the latest changes.</string>
+    <string name="update_download">Download and install</string>
+    <string name="update_downloading">Downloading update… %1$d%%</string>
+    <string name="update_cancel">Cancel</string>
+    <string name="update_ready">Download complete. Confirm the installation in the system dialog.</string>
+    <string name="update_install">Install</string>
+    <string name="update_later">Later</string>
+    <string name="update_download_failed">Download failed. Check your connection and try again.</string>
+    <string name="update_allow_install">Allow FA Feed to install unknown apps in system settings, then tap Install again.</string>
+
     <string name="open_feed_on_fa">Open feed on FurAffinity</string>
     <string name="log_out">Sign out</string>
 
