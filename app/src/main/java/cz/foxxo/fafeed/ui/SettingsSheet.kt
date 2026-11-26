@@ -86,6 +86,9 @@ fun SettingsSheet(
     activeAccount: String = "",
     onSwitchAccount: (String) -> Unit = {},
     onRemoveAccount: (String) -> Unit = {},
+    onAddAccount: () -> Unit = {},
+    onExportBackup: () -> String = { "" },
+    onImportBackup: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val prefs = remember { Prefs(context) }
@@ -100,6 +103,27 @@ fun SettingsSheet(
     var cacheRefresh by remember { mutableStateOf(0) }
     LaunchedEffect(cacheRefresh) {
         cacheBytes = withContext(Dispatchers.IO) { app?.imageDiskCache?.size ?: 0L }
+    }
+
+    val backupExport = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        runCatching {
+            context.contentResolver.openOutputStream(uri)?.use { out ->
+                out.write(onExportBackup().toByteArray(Charsets.UTF_8))
+            }
+        }
+    }
+    val backupImport = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        runCatching {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                onImportBackup(input.readBytes().toString(Charsets.UTF_8))
+            }
+        }
     }
 
     val folderPicker = rememberLauncherForActivityResult(
@@ -172,6 +196,9 @@ fun SettingsSheet(
                         Text(stringResource(R.string.account_remove))
                     }
                 }
+            }
+            TextButton(onClick = onAddAccount) {
+                Text(stringResource(R.string.add_account))
             }
 
             Spacer(Modifier.height(18.dp))
@@ -442,6 +469,26 @@ fun SettingsSheet(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+
+            Spacer(Modifier.height(10.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(14.dp))
+
+            Text(stringResource(R.string.backup), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.backup_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = { backupExport.launch("fafeed-backup-${System.currentTimeMillis()}.json") }) {
+                    Text(stringResource(R.string.backup_export))
+                }
+                TextButton(onClick = { backupImport.launch(arrayOf("application/json", "*/*")) }) {
+                    Text(stringResource(R.string.backup_import))
+                }
             }
 
             Spacer(Modifier.height(10.dp))

@@ -7,8 +7,12 @@ the Android app.
 ## [Unreleased]
 
 ### Added
+- Per-account feed snapshots: switching accounts restores the previous feed immediately
+  and only re-syncs when its data is stale.
+- JSON backup/import of preferences, watchlist, hidden authors and account names via the
+  system file picker. Credentials are never included.
 - Multiple accounts: saved FA logins in encrypted storage, switching in Settings with a
-  fresh feed cache so accounts never mix.
+  fresh feed cache so accounts never mix; new accounts can be added without signing out.
 - Theme selection (light / dark / system) and optional Material You dynamic colours on
   Android 12+, both in Settings with immediate effect.
 - Deep links: HTTPS `furaffinity.net/view/...` and `/user/...` URLs open the submission

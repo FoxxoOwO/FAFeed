@@ -118,6 +118,9 @@ fun FeedScreen(
     activeAccount: String = "",
     onSwitchAccount: (String) -> Unit = {},
     onRemoveAccount: (String) -> Unit = {},
+    onAddAccount: () -> Unit = {},
+    onExportBackup: () -> String = { "" },
+    onImportBackup: (String) -> Unit = {},
     listState: LazyListState = rememberLazyListState(),
 ) {
     val state = vm.state
@@ -176,6 +179,12 @@ fun FeedScreen(
                 onRemoveAccount(user)
                 settingsOpen = false
             },
+            onAddAccount = {
+                onAddAccount()
+                settingsOpen = false
+            },
+            onExportBackup = onExportBackup,
+            onImportBackup = onImportBackup,
             state = state,
             onSafeOnly = vm::setSafeOnly,
             onBlurNsfw = vm::setBlurNsfw,

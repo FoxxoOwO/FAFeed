@@ -13,9 +13,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -50,7 +54,10 @@ import kotlinx.coroutines.launch
 @SuppressLint("SetJavaScriptEnabled")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(onLoggedIn: (cookies: String, user: String, userAgent: String) -> Unit) {
+fun LoginScreen(
+    onLoggedIn: (cookies: String, user: String, userAgent: String) -> Unit,
+    onCancel: (() -> Unit)? = null,
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
@@ -136,6 +143,9 @@ fun LoginScreen(onLoggedIn: (cookies: String, user: String, userAgent: String) -
     BackHandler(enabled = webView?.canGoBack() == true) {
         webView?.goBack()
     }
+    BackHandler(enabled = webView?.canGoBack() != true && onCancel != null) {
+        onCancel?.invoke()
+    }
 
     Scaffold(
         topBar = {
@@ -143,6 +153,16 @@ fun LoginScreen(onLoggedIn: (cookies: String, user: String, userAgent: String) -
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                 ),
+                navigationIcon = {
+                    if (onCancel != null) {
+                        IconButton(onClick = onCancel) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                            )
+                        }
+                    }
+                },
                 title = {
                     Column {
                         Text(stringResource(R.string.login_title), style = MaterialTheme.typography.titleLarge)

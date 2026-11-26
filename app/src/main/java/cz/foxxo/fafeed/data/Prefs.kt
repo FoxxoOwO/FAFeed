@@ -1,6 +1,7 @@
 package cz.foxxo.fafeed.data
 
 import android.content.Context
+import org.json.JSONObject
 
 class Prefs(context: Context) {
     private val sp = context.getSharedPreferences("fafeed", Context.MODE_PRIVATE)
@@ -97,6 +98,39 @@ class Prefs(context: Context) {
     var activeAccount: String
         get() = sp.getString("active_account", "").orEmpty()
         set(value) = sp.edit().putString("active_account", value).apply()
+
+    /** Per-account feed snapshots, keyed by lowercased username. */
+    var accountSnapshots: String
+        get() = sp.getString("account_snapshots", "").orEmpty()
+        set(value) = sp.edit().putString("account_snapshots", value).apply()
+
+    /** Feed-related state of the active account, stored when switching away from it. */
+    fun snapshot(): String = JSONObject()
+        .put("cached_feed_v2", cachedFeed)
+        .put("watch_users", watchUsers)
+        .put("scan_state", scanState)
+        .put("scan_index", scanIndex)
+        .put("last_sync_at", lastSyncAt)
+        .put("users_fetched_at", usersFetchedAt)
+        .put("unread_baseline_id", unreadBaselineId)
+        .put("read_ids", readIds.joinToString(","))
+        .put("muted_users", mutedUsers.joinToString("\n"))
+        .toString()
+
+    fun restoreSnapshot(json: String) {
+        val root = runCatching { JSONObject(json) }.getOrNull() ?: return
+        cachedFeed = root.optString("cached_feed_v2")
+        watchUsers = root.optString("watch_users")
+        scanState = root.optString("scan_state")
+        scanIndex = root.optInt("scan_index")
+        lastSyncAt = root.optLong("last_sync_at")
+        usersFetchedAt = root.optLong("users_fetched_at")
+        unreadBaselineId = root.optLong("unread_baseline_id")
+        val ids = root.optString("read_ids")
+        sp.edit().putString("read_ids", ids).apply()
+        mutedUsers = root.optString("muted_users")
+            .lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+    }
 
     /** Automatic update check once a day on app start. Enabled by default. */
     var autoUpdate: Boolean

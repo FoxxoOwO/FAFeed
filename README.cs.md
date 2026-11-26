@@ -45,8 +45,10 @@ scrollováním.
   dopředu se přednačítá. Velikost je vidět v Nastavení a jde smazat.
 - **Animace** – přechod feed ↔ detail, zmáčknutí karty, plynulé rozplynutí NSFW závoje
   a crossfade podtitulku v top baru.
+- **Cache na účet** – každý účet si pamatuje svůj feed; při přepnutí se obnoví a znovu se synchronizuje jen pokud jsou data stará.
+- **Záloha** – nastavení, watchlist, skrytí autoři a názvy účtů jde exportovat do JSON a znovu obnovit. Cookies a hesla se neukládají.
 - **Více účtů** – několik FA přihlášení je uložených šifrovaně; při přepnutí se cache feedu
-  smaže a znovu načte, aby se obsahy účtů nemíchaly. Další účet přidáš odhlášením a přihlášením.
+  smaže a znovu načte, aby se obsahy účtů nemíchaly. Nový účet přidáš přímo v Nastavení.
 - **Volba motivu** – světlý / tmavý / systém a volitelně barvy z tapety (Material You) na
   Androidu 12+. Změna v Nastavení se projeví okamžitě.
 - **Deep linky** – odkaz `furaffinity.net/view/...` otevře detail a `/user/...` galerii autora
@@ -112,7 +114,7 @@ Parsování stojí na marku FA: `figure[id^=sid-]` s `figcaption`, rating v clas
 
 ```bash
 ./gradlew :app:assembleDebug      # JDK 17+, AGP 9.5.1, Gradle 9.7.1, compileSdk 36
-./gradlew :app:testDebugUnitTest  # 34 unit testů: parser, feed, cookies, aktualizace, deep linky
+./gradlew :app:testDebugUnitTest  # 36 unit testů: parser, feed, cookies, aktualizace, deep linky, záloha
 ./gradlew :app:assembleDebugAndroidTest  # Compose UI testy (ke spuštění potřebují zařízení)
 ./gradlew :app:assembleRelease            # R8-minifikovaný, podepsaný release klíčem
 ```

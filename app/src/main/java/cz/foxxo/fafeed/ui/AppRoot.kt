@@ -21,10 +21,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cz.foxxo.fafeed.data.AccountCredentials
 import cz.foxxo.fafeed.data.Accounts
+import cz.foxxo.fafeed.data.Backup
+import cz.foxxo.fafeed.data.BackupData
 import cz.foxxo.fafeed.data.Prefs
 import cz.foxxo.fafeed.ui.theme.FaTheme
 
-private enum class Screen { LOGIN, FEED, DETAIL, PROFILE, CHALLENGE }
+private enum class Screen { LOGIN, FEED, DETAIL, PROFILE, CHALLENGE, ADD_ACCOUNT }
 
 private data class UiRoute(
     val screen: Screen,
@@ -47,6 +49,7 @@ fun AppRoot(
     var loggedIn by remember { mutableStateOf(prefs.cookies.isNotBlank()) }
     var detailId by rememberSaveable { mutableStateOf<Long?>(null) }
     var profileUser by rememberSaveable { mutableStateOf<String?>(null) }
+    var addAccountOpen by remember { mutableStateOf(false) }
     var lang by remember { mutableStateOf(prefs.lang) }
     var theme by remember { mutableStateOf(prefs.theme) }
     var dynamicColor by remember { mutableStateOf(prefs.dynamicColor) }
@@ -68,24 +71,65 @@ fun AppRoot(
 
     fun switchAccount(user: String) {
         if (prefs.user.isNotBlank() && prefs.cookies.isNotBlank()) {
-            accounts.save(AccountCredentials(prefs.user, prefs.cookies, prefs.userAgent))
+            val current = prefs.user
+            accounts.save(AccountCredentials(current, prefs.cookies, prefs.userAgent))
+            accounts.saveSnapshot(current, prefs.snapshot())
         }
         val target = accounts.get(user) ?: return
-        vm.logout()
+        runCatching {
+            CookieManager.getInstance().removeAllCookies(null)
+            CookieManager.getInstance().flush()
+        }
         prefs.cookies = target.cookies
         prefs.user = target.user
         if (target.userAgent.isNotBlank()) prefs.userAgent = target.userAgent
         accounts.active = target.user
-        vm.onLoggedIn(target.cookies, target.user, target.userAgent)
+        val snapshot = accounts.snapshot(user)
+        if (snapshot != null) {
+            prefs.restoreSnapshot(snapshot)
+            vm.reloadFromStore()
+            vm.start()
+        } else {
+            vm.clearAccountData()
+            vm.onLoggedIn(target.cookies, target.user, target.userAgent)
+        }
+        vm.acknowledgeExpired()
         profileUser = null
         detailId = null
         loggedIn = true
     }
 
+    fun exportBackup(): String = Backup.serialize(
+        BackupData(
+            exportedAt = System.currentTimeMillis(),
+            safeOnly = prefs.safeOnly,
+            blurNsfw = prefs.blurNsfw,
+            lang = prefs.lang,
+            theme = prefs.theme,
+            dynamicColor = prefs.dynamicColor,
+            watchUsers = vm.followedUsers(),
+            mutedUsers = prefs.mutedUsers,
+            accountNames = accounts.list().map { it.user },
+            downloadTreeUri = prefs.downloadTreeUri,
+            downloadTreeName = prefs.downloadTreeName,
+        ),
+    )
+
+    fun importBackup(json: String) {
+        val data = Backup.parse(json) ?: return
+        vm.applyBackup(data)
+        lang = prefs.lang
+        theme = prefs.theme
+        dynamicColor = prefs.dynamicColor
+    }
+
     fun removeAccount(user: String) {
         accounts.remove(user)
-        if (accounts.active.equals(user, ignoreCase = true)) {
+        if (accounts.active.equals(user, ignoreCase = true) || accounts.active.isBlank()) {
             val next = accounts.list().firstOrNull()
+            // Don't let switchAccount() save the removed account again.
+            prefs.cookies = ""
+            prefs.user = ""
             if (next != null) {
                 switchAccount(next.user)
             } else {
@@ -97,6 +141,7 @@ fun AppRoot(
 
     val route = when {
         !loggedIn || vm.sessionExpired -> UiRoute(Screen.LOGIN)
+        addAccountOpen -> UiRoute(Screen.ADD_ACCOUNT)
         vm.blocked -> UiRoute(Screen.CHALLENGE)
         detailId != null -> UiRoute(Screen.DETAIL, detailId)
         profileUser != null -> UiRoute(Screen.PROFILE, profileUser = profileUser)
@@ -109,9 +154,11 @@ fun AppRoot(
         targetState = route,
         transitionSpec = {
             val forward = targetState.screen == Screen.DETAIL ||
-                targetState.screen == Screen.PROFILE || targetState.screen == Screen.CHALLENGE
+                targetState.screen == Screen.PROFILE || targetState.screen == Screen.CHALLENGE ||
+                targetState.screen == Screen.ADD_ACCOUNT
             val backward = initialState.screen == Screen.DETAIL ||
-                initialState.screen == Screen.PROFILE || initialState.screen == Screen.CHALLENGE
+                initialState.screen == Screen.PROFILE || initialState.screen == Screen.CHALLENGE ||
+                initialState.screen == Screen.ADD_ACCOUNT
             val openingPost = forward && !backward
             val closingPost = backward && !forward
             when {
@@ -151,6 +198,15 @@ fun AppRoot(
                 )
             }
 
+            Screen.ADD_ACCOUNT -> LoginScreen(
+                onLoggedIn = { cookies, user, userAgent ->
+                    accounts.save(AccountCredentials(user, cookies, userAgent))
+                    addAccountOpen = false
+                    switchAccount(user)
+                },
+                onCancel = { addAccountOpen = false },
+            )
+
             Screen.CHALLENGE -> ChallengeScreen(
                 onResolved = { cookies, agent -> vm.resolveChallenge(cookies, agent) },
                 onCancel = { vm.acknowledgeBlocked() },
@@ -179,11 +235,15 @@ fun AppRoot(
                 activeAccount = accounts.active,
                 onSwitchAccount = { switchAccount(it) },
                 onRemoveAccount = { removeAccount(it) },
+                onAddAccount = { addAccountOpen = true },
+                onExportBackup = ::exportBackup,
+                onImportBackup = ::importBackup,
                 onOpenSubmission = { detailId = it },
                 onOpenProfile = { profileUser = it },
                 onLogout = {
                     if (prefs.user.isNotBlank() && prefs.cookies.isNotBlank()) {
                         accounts.save(AccountCredentials(prefs.user, prefs.cookies, prefs.userAgent))
+                        accounts.saveSnapshot(prefs.user, prefs.snapshot())
                     }
                     accounts.active = ""
                     runCatching {

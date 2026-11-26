@@ -59,10 +59,37 @@ class Accounts(context: Context) {
         saveAll(accounts)
     }
 
+    private fun snapshots(): MutableMap<String, String> {
+        val result = linkedMapOf<String, String>()
+        val root = runCatching { JSONObject(prefs.accountSnapshots) }.getOrNull() ?: return result
+        root.keys().forEach { key -> result[key.lowercase()] = root.optString(key) }
+        return result
+    }
+
+    fun saveSnapshot(user: String, json: String) {
+        if (user.isBlank()) return
+        val map = snapshots()
+        map[user.lowercase()] = json
+        val root = JSONObject()
+        map.forEach { (key, value) -> root.put(key, value) }
+        prefs.accountSnapshots = root.toString()
+    }
+
+    fun snapshot(user: String): String? = snapshots()[user.lowercase()]
+
+    fun removeSnapshot(user: String) {
+        val map = snapshots()
+        map.remove(user.lowercase())
+        val root = JSONObject()
+        map.forEach { (key, value) -> root.put(key, value) }
+        prefs.accountSnapshots = root.toString()
+    }
+
     fun remove(user: String) {
         val accounts = all()
         accounts.remove(user.lowercase())
         saveAll(accounts)
+        removeSnapshot(user)
         if (active.equals(user, ignoreCase = true)) active = ""
     }
 

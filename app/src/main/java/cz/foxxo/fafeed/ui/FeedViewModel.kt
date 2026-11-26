@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import cz.foxxo.fafeed.data.BackupData
 import cz.foxxo.fafeed.data.FaAuthException
 import cz.foxxo.fafeed.data.FaBlockedException
 import cz.foxxo.fafeed.data.FaClient
@@ -171,6 +172,64 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun syncAll() = refresh(full = true)
+
+    fun followedUsers(): List<String> = store.loadUsers()
+
+    fun clearAccountData() {
+        prefs.cachedFeed = ""
+        prefs.watchUsers = ""
+        prefs.scanState = ""
+        prefs.scanIndex = 0
+        prefs.lastSyncAt = 0L
+        prefs.usersFetchedAt = 0L
+        prefs.unreadBaselineId = 0L
+        prefs.readIds = emptySet()
+    }
+
+    /** Reloads a different account's snapshot without losing the stored feed. */
+    fun reloadFromStore() {
+        unreadBaseline = prefs.unreadBaselineId
+        readIds = prefs.readIds.filter { it > unreadBaseline }.toSet()
+        val items = store.loadItems()
+        if (unreadBaseline == 0L && items.isNotEmpty()) {
+            unreadBaseline = FeedMerge.newestId(items)
+            prefs.unreadBaselineId = unreadBaseline
+        }
+        state = FeedState(
+            items = items,
+            user = prefs.user,
+            safeOnly = prefs.safeOnly,
+            blurNsfw = prefs.blurNsfw,
+            followedCount = store.loadUsers().size,
+            lastSyncAt = store.lastSyncAt,
+            mutedUsers = prefs.mutedUsers,
+            newIds = items.filter { it.id > unreadBaseline && it.id !in readIds }.map { it.id }.toSet(),
+        )
+        started = false
+        syncing = false
+    }
+
+    /** Restores preferences and the watchlist from a backup; sessions are not restored. */
+    fun applyBackup(data: BackupData) {
+        prefs.safeOnly = data.safeOnly
+        prefs.blurNsfw = data.blurNsfw
+        prefs.lang = data.lang
+        prefs.theme = data.theme
+        prefs.dynamicColor = data.dynamicColor
+        prefs.mutedUsers = data.mutedUsers
+        prefs.downloadTreeUri = data.downloadTreeUri
+        prefs.downloadTreeName = data.downloadTreeName
+        store.saveUsers(data.watchUsers)
+        state = state.copy(
+            safeOnly = data.safeOnly,
+            blurNsfw = data.blurNsfw,
+            mutedUsers = prefs.mutedUsers,
+            followedCount = data.watchUsers.size,
+            newIds = emptySet(),
+            query = "",
+            rating = "",
+        )
+    }
 
     fun loadMore() {
         state = state.copy(visibleCount = state.visibleCount + PAGE_SIZE)
