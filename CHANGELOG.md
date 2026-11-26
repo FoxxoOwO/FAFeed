@@ -7,6 +7,15 @@ the Android app.
 ## [Unreleased]
 
 ### Added
+- Multiple accounts: saved FA logins in encrypted storage, switching in Settings with a
+  fresh feed cache so accounts never mix.
+- Theme selection (light / dark / system) and optional Material You dynamic colours on
+  Android 12+, both in Settings with immediate effect.
+- Deep links: HTTPS `furaffinity.net/view/...` and `/user/...` URLs open the submission
+  detail or author gallery directly in the app.
+- New-post indicators: posts above the stored read baseline get a NEW badge and a count
+  in the top bar; tapping the count marks them all read and scrolls to the top, while
+  opening a single post clears only its own badge.
 - Cloudflare recovery screen: when sync is blocked, a WebView lets the user complete the
   check manually and hands the merged cookies plus User-Agent back to the scraper.
   The DOM probe is shared with the login screen (`WebAuth.kt`).

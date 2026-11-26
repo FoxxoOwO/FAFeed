@@ -94,6 +94,7 @@ import coil3.SingletonImageLoader
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import kotlinx.coroutines.launch
+import cz.foxxo.fafeed.data.AccountCredentials
 import cz.foxxo.fafeed.data.FaParser
 import cz.foxxo.fafeed.data.FeedItem
 import cz.foxxo.fafeed.ui.theme.ratingColor
@@ -109,6 +110,14 @@ fun FeedScreen(
     onLogout: () -> Unit,
     lang: String = LANG_SYSTEM,
     onSetLang: (String) -> Unit = {},
+    theme: String = "system",
+    onSetTheme: (String) -> Unit = {},
+    dynamicColor: Boolean = false,
+    onSetDynamicColor: (Boolean) -> Unit = {},
+    accounts: List<AccountCredentials> = emptyList(),
+    activeAccount: String = "",
+    onSwitchAccount: (String) -> Unit = {},
+    onRemoveAccount: (String) -> Unit = {},
     listState: LazyListState = rememberLazyListState(),
 ) {
     val state = vm.state
@@ -153,6 +162,20 @@ fun FeedScreen(
             updateVm = updateVm,
             lang = lang,
             onSetLang = onSetLang,
+            theme = theme,
+            onSetTheme = onSetTheme,
+            dynamicColor = dynamicColor,
+            onSetDynamicColor = onSetDynamicColor,
+            accounts = accounts,
+            activeAccount = activeAccount,
+            onSwitchAccount = { user ->
+                onSwitchAccount(user)
+                settingsOpen = false
+            },
+            onRemoveAccount = { user ->
+                onRemoveAccount(user)
+                settingsOpen = false
+            },
             state = state,
             onSafeOnly = vm::setSafeOnly,
             onBlurNsfw = vm::setBlurNsfw,
@@ -227,6 +250,11 @@ fun FeedScreen(
                                     state.progressTotal,
                                 )
 
+                                state.newIds.isNotEmpty() -> stringResource(
+                                    R.string.new_posts_count,
+                                    state.newIds.size,
+                                )
+
                                 state.user.isNotBlank() -> "@${state.user}"
                                 else -> ""
                             }
@@ -238,10 +266,18 @@ fun FeedScreen(
                                 Text(
                                     text,
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = if (syncing) {
+                                    color = if (syncing || state.newIds.isNotEmpty()) {
                                         MaterialTheme.colorScheme.primary
                                     } else {
                                         MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                    modifier = if (!syncing && state.newIds.isNotEmpty()) {
+                                        Modifier.clickable {
+                                            vm.markAllSeen()
+                                            scope.launch { listState.animateScrollToItem(0) }
+                                        }
+                                    } else {
+                                        Modifier
                                     },
                                 )
                             }
@@ -382,7 +418,11 @@ fun FeedScreen(
                         FeedCard(
                             item = item,
                             blurNsfw = state.blurNsfw,
-                            onOpen = { onOpenSubmission(item.id) },
+                            isNew = item.id in state.newIds,
+                            onOpen = {
+                                vm.markRead(item.id)
+                                onOpenSubmission(item.id)
+                            },
                             onOpenProfile = onOpenProfile,
                             modifier = Modifier.animateItem(),
                         )
@@ -438,6 +478,7 @@ private fun CenterBox(content: @Composable () -> Unit) {
 fun FeedCard(
     item: FeedItem,
     blurNsfw: Boolean,
+    isNew: Boolean = false,
     onOpen: () -> Unit,
     onOpenProfile: (String) -> Unit = {},
     modifier: Modifier = Modifier,
@@ -509,7 +550,26 @@ fun FeedCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                RatingBadge(item.rating)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (isNew) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .padding(horizontal = 7.dp, vertical = 3.dp),
+                        ) {
+                            Text(
+                                stringResource(R.string.new_badge),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp,
+                            )
+                        }
+                        Spacer(Modifier.width(6.dp))
+                    }
+                    RatingBadge(item.rating)
+                }
             }
 
             Box(

@@ -11,6 +11,7 @@ import cz.foxxo.fafeed.data.FaAuthException
 import cz.foxxo.fafeed.data.FaBlockedException
 import cz.foxxo.fafeed.data.FaClient
 import cz.foxxo.fafeed.data.FeedItem
+import cz.foxxo.fafeed.data.FeedMerge
 import cz.foxxo.fafeed.data.FeedRepository
 import cz.foxxo.fafeed.data.FeedStore
 import cz.foxxo.fafeed.data.Prefs
@@ -45,6 +46,8 @@ data class FeedState(
     val rating: String = "",
     /** Lowercased usernames hidden from the feed. */
     val mutedUsers: Set<String> = emptySet(),
+    /** Ids of posts added since the last time the user marked the feed as read. */
+    val newIds: Set<Long> = emptySet(),
 ) {
     private val shown: List<FeedItem>
         get() = items.filter { item ->
@@ -69,6 +72,8 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
     private val store = FeedStore(prefs)
     private val client = FaClient(userAgentProvider = { prefs.effectiveUserAgent }) { prefs.cookies }
     private val repository = FeedRepository(client, store) { prefs.user }
+    private var unreadBaseline = prefs.unreadBaselineId
+    private var readIds = prefs.readIds.filter { it > unreadBaseline }.toSet()
 
     var state by mutableStateOf(
         FeedState(
@@ -82,6 +87,15 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
         )
     )
         private set
+
+    init {
+        // First run (or first run after sign-out): don't mark the whole cached feed as new.
+        if (unreadBaseline == 0L && state.items.isNotEmpty()) {
+            unreadBaseline = FeedMerge.newestId(state.items)
+            prefs.unreadBaselineId = unreadBaseline
+        }
+        readIds = readIds.filter { it > unreadBaseline }.toSet()
+    }
 
     /** Set when FA answers with the login wall – the UI shows the login screen again. */
     var sessionExpired by mutableStateOf(false)
@@ -124,8 +138,15 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
                         }
                     }
                 }
+                val loaded = store.loadItems()
+                if (unreadBaseline == 0L) {
+                    unreadBaseline = FeedMerge.newestId(loaded)
+                    prefs.unreadBaselineId = unreadBaseline
+                }
+                readIds = readIds.filter { it > unreadBaseline }.toSet()
                 state = state.copy(
-                    items = store.loadItems(),
+                    items = loaded,
+                    newIds = loaded.filter { it.id > unreadBaseline && it.id !in readIds }.map { it.id }.toSet(),
                     loading = false,
                     refreshing = false,
                     error = null,
@@ -153,6 +174,23 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
 
     fun loadMore() {
         state = state.copy(visibleCount = state.visibleCount + PAGE_SIZE)
+    }
+
+    /** Called when the user opens one post: only that post stops being "new". */
+    fun markRead(id: Long) {
+        if (id !in state.newIds) return
+        readIds = readIds + id
+        prefs.readIds = readIds
+        state = state.copy(newIds = state.newIds - id)
+    }
+
+    /** Called when the user taps the "new posts" indicator in the top bar. */
+    fun markAllSeen() {
+        unreadBaseline = FeedMerge.newestId(state.items)
+        prefs.unreadBaselineId = unreadBaseline
+        readIds = emptySet()
+        prefs.readIds = readIds
+        state = state.copy(newIds = emptySet())
     }
 
     fun setSafeOnly(value: Boolean) {
@@ -188,6 +226,8 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
 
     fun logout() {
         prefs.clearSession()
+        unreadBaseline = 0L
+        readIds = emptySet()
         state = FeedState(mutedUsers = prefs.mutedUsers)
         started = false
         syncing = false
@@ -218,6 +258,8 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
         if (userAgent.isNotBlank()) prefs.userAgent = userAgent
         sessionExpired = false
         blocked = false
+        unreadBaseline = prefs.unreadBaselineId
+        readIds = prefs.readIds.filter { it > unreadBaseline }.toSet()
         state = FeedState(
             user = user,
             safeOnly = prefs.safeOnly,

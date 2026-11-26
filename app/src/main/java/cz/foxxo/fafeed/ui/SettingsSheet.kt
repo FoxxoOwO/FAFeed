@@ -1,6 +1,7 @@
 package cz.foxxo.fafeed.ui
 
 import android.content.Intent
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -49,12 +50,16 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import cz.foxxo.fafeed.BuildConfig
 import cz.foxxo.fafeed.R
+import cz.foxxo.fafeed.data.AccountCredentials
 import androidx.compose.ui.unit.dp
 import androidx.documentfile.provider.DocumentFile
 import java.util.Locale
 import cz.foxxo.fafeed.FaApp
 import cz.foxxo.fafeed.data.FaParser
 import cz.foxxo.fafeed.data.Prefs
+import cz.foxxo.fafeed.ui.theme.THEME_DARK
+import cz.foxxo.fafeed.ui.theme.THEME_LIGHT
+import cz.foxxo.fafeed.ui.theme.THEME_SYSTEM
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -73,6 +78,14 @@ fun SettingsSheet(
     onDismiss: () -> Unit,
     lang: String = LANG_SYSTEM,
     onSetLang: (String) -> Unit = {},
+    theme: String = THEME_SYSTEM,
+    onSetTheme: (String) -> Unit = {},
+    dynamicColor: Boolean = false,
+    onSetDynamicColor: (Boolean) -> Unit = {},
+    accounts: List<AccountCredentials> = emptyList(),
+    activeAccount: String = "",
+    onSwitchAccount: (String) -> Unit = {},
+    onRemoveAccount: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val prefs = remember { Prefs(context) }
@@ -123,6 +136,43 @@ fun SettingsSheet(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
+            Spacer(Modifier.height(14.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(14.dp))
+
+            Text(stringResource(R.string.accounts), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.accounts_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+            accounts.forEach { account ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "@${account.user}" + if (account.user.equals(activeAccount, ignoreCase = true)) {
+                            " • ${stringResource(R.string.account_active)}"
+                        } else {
+                            ""
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (!account.user.equals(activeAccount, ignoreCase = true)) {
+                        TextButton(onClick = { onSwitchAccount(account.user) }) {
+                            Text(stringResource(R.string.account_switch))
+                        }
+                    }
+                    TextButton(onClick = { onRemoveAccount(account.user) }) {
+                        Text(stringResource(R.string.account_remove))
+                    }
+                }
+            }
 
             Spacer(Modifier.height(18.dp))
 
@@ -222,6 +272,38 @@ fun SettingsSheet(
                     )
                 }
             }
+
+            Spacer(Modifier.height(10.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(14.dp))
+
+            Text(stringResource(R.string.theme), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    THEME_SYSTEM to stringResource(R.string.theme_system),
+                    THEME_LIGHT to stringResource(R.string.theme_light),
+                    THEME_DARK to stringResource(R.string.theme_dark),
+                ).forEach { (value, label) ->
+                    FilterChip(
+                        selected = theme == value,
+                        onClick = { onSetTheme(value) },
+                        label = { Text(label) },
+                    )
+                }
+            }
+            SettingSwitch(
+                title = stringResource(R.string.dynamic_color),
+                subtitle = stringResource(
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        R.string.dynamic_color_subtitle
+                    } else {
+                        R.string.dynamic_color_unavailable
+                    },
+                ),
+                checked = dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
+                onChange = onSetDynamicColor,
+            )
 
             Spacer(Modifier.height(10.dp))
             HorizontalDivider()

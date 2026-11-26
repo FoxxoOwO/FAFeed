@@ -19,6 +19,8 @@
     <string name="search_no_results">Žádné načtené příspěvky neodpovídají hledání. Filtry platí jen pro už načtené příspěvky.</string>
     <string name="search_clear">Vymazat filtry</string>
     <string name="search_result_count">Zobrazeno %1$d z %2$d</string>
+    <string name="new_posts_count">%1$d nových příspěvků</string>
+    <string name="new_badge">NOVÉ</string>
     <plurals name="feed_end">
         <item quantity="one">Konec feedu • %1$d příspěvek od %2$d sledovaných</item>
         <item quantity="few">Konec feedu • %1$d příspěvky od %2$d sledovaných</item>
@@ -78,6 +80,11 @@
 
     <!-- Settings -->
     <string name="settings_title">Nastavení</string>
+    <string name="accounts">Účty</string>
+    <string name="accounts_hint">Další FA účet přidáš odhlášením a přihlášením jiným účtem.</string>
+    <string name="account_active">aktivní</string>
+    <string name="account_switch">Přepnout</string>
+    <string name="account_remove">Odebrat</string>
     <string name="signed_in_as">Přihlášen jako @%1$s</string>
     <string name="not_signed_in">Nepřihlášeno</string>
     <string name="hide_nsfw">Skrýt NSFW</string>
@@ -137,6 +144,13 @@
     <string name="lang_system">Systém</string>
     <string name="lang_czech">Čeština</string>
     <string name="lang_english">English</string>
+    <string name="theme">Motiv</string>
+    <string name="theme_system">Systém</string>
+    <string name="theme_light">Světlý</string>
+    <string name="theme_dark">Tmavý</string>
+    <string name="dynamic_color">Dynamická barva</string>
+    <string name="dynamic_color_subtitle">Barvy z tvé tapety (Android 12+)</string>
+    <string name="dynamic_color_unavailable">Vyžaduje Android 12 nebo novější</string>
 
     <!-- Errors -->
     <string name="session_expired">Přihlášení na FurAffinity vypršelo. Přihlas se znovu.</string>

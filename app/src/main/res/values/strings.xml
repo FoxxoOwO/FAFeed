@@ -19,6 +19,8 @@
     <string name="search_no_results">No loaded posts match your search. Filters only apply to posts already loaded.</string>
     <string name="search_clear">Clear filters</string>
     <string name="search_result_count">Showing %1$d of %2$d</string>
+    <string name="new_posts_count">%1$d new posts</string>
+    <string name="new_badge">NEW</string>
     <plurals name="feed_end">
         <item quantity="one">End of feed • %1$d post from %2$d followed</item>
         <item quantity="other">End of feed • %1$d posts from %2$d followed</item>
@@ -74,6 +76,11 @@
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
+    <string name="accounts">Accounts</string>
+    <string name="accounts_hint">Sign out and sign in with another FA account to add it here.</string>
+    <string name="account_active">active</string>
+    <string name="account_switch">Switch</string>
+    <string name="account_remove">Remove</string>
     <string name="signed_in_as">Signed in as @%1$s</string>
     <string name="not_signed_in">Not signed in</string>
     <string name="hide_nsfw">Hide NSFW</string>
@@ -131,6 +138,13 @@
     <string name="lang_system">System</string>
     <string name="lang_czech">Čeština</string>
     <string name="lang_english">English</string>
+    <string name="theme">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="dynamic_color">Dynamic color</string>
+    <string name="dynamic_color_subtitle">Use colours from your wallpaper (Android 12+)</string>
+    <string name="dynamic_color_unavailable">Requires Android 12 or newer</string>
 
     <!-- Errors -->
     <string name="session_expired">Your FurAffinity session expired. Sign in again.</string>

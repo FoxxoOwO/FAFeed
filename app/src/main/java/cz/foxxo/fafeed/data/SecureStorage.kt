@@ -6,12 +6,11 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
 /**
- * Stores the FurAffinity session cookie encrypted at rest.
- *
- * Existing installs had the cookie in plain SharedPreferences; on first read it is
- * migrated and removed from the plain file. If the device cannot provide a Keystore
- * key, the plain file is used as a fallback so the app stays usable.
+ * Encrypted key/value storage for sensitive data (FA cookies and the account list).
+ * Values written by older versions in plain SharedPreferences are migrated on first read.
+ * If the device cannot provide a Keystore key, the plain file is used as a fallback.
  */
+@Suppress("DEPRECATION")
 class SecureStorage(context: Context) {
     private val app = context.applicationContext
     private val plain = app.getSharedPreferences("fafeed", Context.MODE_PRIVATE)
@@ -31,36 +30,37 @@ class SecureStorage(context: Context) {
         null
     }
 
-    var cookies: String
-        get() {
-            val secured = encrypted?.getString(KEY, null)
-            if (!secured.isNullOrEmpty()) return secured
-            val legacy = plain.getString(KEY, "").orEmpty()
-            if (legacy.isNotBlank()) {
-                encrypted?.edit()?.putString(KEY, legacy)?.apply()
-                plain.edit().remove(KEY).apply()
-            }
-            return legacy
+    fun read(key: String): String? {
+        val secured = encrypted?.getString(key, null)
+        if (!secured.isNullOrEmpty()) return secured
+        val legacy = plain.getString(key, null)
+        if (!legacy.isNullOrEmpty()) {
+            write(key, legacy)
         }
-        set(value) {
-            if (value.isBlank()) {
-                clear()
-                return
-            }
-            if (encrypted != null) {
-                encrypted.edit().putString(KEY, value).apply()
-                plain.edit().remove(KEY).apply()
-            } else {
-                plain.edit().putString(KEY, value).apply()
-            }
-        }
-
-    fun clear() {
-        encrypted?.edit()?.remove(KEY)?.apply()
-        plain.edit().remove(KEY).apply()
+        return legacy
     }
 
+    fun write(key: String, value: String?) {
+        if (encrypted != null) {
+            encrypted.edit().apply { if (value == null) remove(key) else putString(key, value) }.apply()
+            plain.edit().remove(key).apply()
+        } else {
+            plain.edit().apply { if (value == null) remove(key) else putString(key, value) }.apply()
+        }
+    }
+
+    var cookies: String
+        get() = read(KEY_COOKIES).orEmpty()
+        set(value) = write(KEY_COOKIES, value.ifBlank { null })
+
+    fun clearCookies() = write(KEY_COOKIES, null)
+
+    var accountsJson: String
+        get() = read(KEY_ACCOUNTS).orEmpty()
+        set(value) = write(KEY_ACCOUNTS, value.ifBlank { null })
+
     private companion object {
-        const val KEY = "cookies"
+        const val KEY_COOKIES = "cookies"
+        const val KEY_ACCOUNTS = "accounts"
     }
 }

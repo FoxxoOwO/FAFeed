@@ -45,6 +45,16 @@ social feed: posts from the accounts you follow, newest first, with endless scro
   a few cards ahead are prefetched. The size is shown in Settings and can be cleared.
 - **Animations** – feed ↔ detail transitions, card press feedback, a smooth NSFW veil
   fade, and a crossfade in the top bar subtitle.
+- **Multiple accounts** – several FA logins are stored encrypted; switching rebuilds the
+  feed cache so posts from different accounts never mix. Add one by signing out and in
+  with another account.
+- **Theme choice** – light / dark / system, plus optional Material You wallpaper colours
+  on Android 12+. The selection lives in Settings and applies immediately.
+- **Deep links** – `furaffinity.net/view/...` opens the post detail and `/user/...` opens
+  the author gallery directly in the app (HTTPS only, manifest intent filter).
+- **New since last visit** – posts added after the last "mark as read" get a NEW badge and
+  a count in the top bar; tapping the count marks them all read and jumps to the top,
+  while opening a single post clears only that post's badge.
 - **Cloudflare recovery** – when a sync is blocked, a WebView opens so you can finish the
   security check manually; the resulting cookies and User-Agent are reused by the scraper.
   There is no automated bypass of bot protection.
@@ -74,9 +84,11 @@ app/src/main/java/cz/foxxo/fafeed/
 │   ├── FeedStore.kt      # local store, JSON serialisation, merge/planner helpers
 │   ├── Models.kt         # FeedItem, FeedPage, SubmissionDetail
 │   ├── Prefs.kt          # cookies, user, switches, cache, language
-│   └── SecureStorage.kt  # encrypted cookie store + plaintext migration
+│   ├── SecureStorage.kt  # encrypted store + plaintext migration
+│   └── Accounts.kt       # encrypted FA logins, active account
 └── ui/
-    ├── AppRoot.kt        # login / feed / detail routing
+    ├── AppRoot.kt        # login / feed / detail / profile routing + deep links
+    ├── DeepLinks.kt      # https://www.furaffinity.net/view|/user parser
     ├── AppLocale.kt      # in-app language override
     ├── LoginScreen.kt    # WebView login + cookie verification
     ├── ChallengeScreen.kt # manual Cloudflare check + cookie hand-back
@@ -102,7 +114,7 @@ classes `r-general|r-mature|r-adult`, the thumbnail
 
 ```bash
 ./gradlew :app:assembleDebug      # JDK 17+, AGP 9.5.1, Gradle 9.7.1, compileSdk 36
-./gradlew :app:testDebugUnitTest  # 30 unit tests: parser, feed logic, cookies, updater
+./gradlew :app:testDebugUnitTest  # 34 unit tests: parser, feed logic, cookies, updater, deep links
 ./gradlew :app:assembleDebugAndroidTest  # Compose UI smoke tests (needs a device to run)
 ./gradlew :app:assembleRelease            # R8-minified, signed with the release key
 ```

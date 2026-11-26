@@ -61,6 +61,19 @@ class Prefs(context: Context) {
         get() = sp.getLong("last_sync_at", 0L)
         set(value) = sp.edit().putLong("last_sync_at", value).apply()
 
+    /** Highest submission id the user has already seen; posts above it are shown as new. */
+    var unreadBaselineId: Long
+        get() = sp.getLong("unread_baseline_id", 0L)
+        set(value) = sp.edit().putLong("unread_baseline_id", value).apply()
+
+    /** Individually opened posts among the unread batch. */
+    var readIds: Set<Long>
+        get() = sp.getString("read_ids", "").orEmpty()
+            .split(',')
+            .mapNotNull { it.toLongOrNull() }
+            .toSet()
+        set(value) = sp.edit().putString("read_ids", value.joinToString(",")).apply()
+
     var usersFetchedAt: Long
         get() = sp.getLong("users_fetched_at", 0L)
         set(value) = sp.edit().putLong("users_fetched_at", value).apply()
@@ -69,6 +82,21 @@ class Prefs(context: Context) {
     var lang: String
         get() = sp.getString("lang", "system").orEmpty()
         set(value) = sp.edit().putString("lang", value).apply()
+
+    /** "system", "light" or "dark" – see THEME_* constants in Theme.kt. */
+    var theme: String
+        get() = sp.getString("theme", "system").orEmpty()
+        set(value) = sp.edit().putString("theme", value).apply()
+
+    /** Material You colours from the wallpaper; only applied on Android 12+. */
+    var dynamicColor: Boolean
+        get() = sp.getBoolean("dynamic_color", false)
+        set(value) = sp.edit().putBoolean("dynamic_color", value).apply()
+
+    /** Username of the account currently in use. */
+    var activeAccount: String
+        get() = sp.getString("active_account", "").orEmpty()
+        set(value) = sp.edit().putString("active_account", value).apply()
 
     /** Automatic update check once a day on app start. Enabled by default. */
     var autoUpdate: Boolean
@@ -90,9 +118,10 @@ class Prefs(context: Context) {
         set(value) = sp.edit().putStringSet("muted_users", value).apply()
 
     fun clearSession() {
-        secure.clear()
+        secure.clearCookies()
         sp.edit().remove("cookies").remove("user").remove("cached_feed_v2")
             .remove("watch_users").remove("scan_state").remove("scan_index")
-            .remove("last_sync_at").remove("users_fetched_at").apply()
+            .remove("last_sync_at").remove("users_fetched_at")
+            .remove("unread_baseline_id").remove("read_ids").apply()
     }
 }

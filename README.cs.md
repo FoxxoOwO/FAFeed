@@ -45,6 +45,15 @@ scrollováním.
   dopředu se přednačítá. Velikost je vidět v Nastavení a jde smazat.
 - **Animace** – přechod feed ↔ detail, zmáčknutí karty, plynulé rozplynutí NSFW závoje
   a crossfade podtitulku v top baru.
+- **Více účtů** – několik FA přihlášení je uložených šifrovaně; při přepnutí se cache feedu
+  smaže a znovu načte, aby se obsahy účtů nemíchaly. Další účet přidáš odhlášením a přihlášením.
+- **Volba motivu** – světlý / tmavý / systém a volitelně barvy z tapety (Material You) na
+  Androidu 12+. Změna v Nastavení se projeví okamžitě.
+- **Deep linky** – odkaz `furaffinity.net/view/...` otevře detail a `/user/...` galerii autora
+  přímo v appce (jen HTTPS, intent filter v manifestu).
+- **Nové od poslední kontroly** – příspěvky přidané od posledního „označit jako přečtené“
+  mají odznak NOVÉ a počet v horní liště; klepnutím na počet se označí vše a skočí se nahoru,
+  otevření jednoho příspěvku smaže jen jeho odznak.
 - **Obnovení po Cloudflare** – když sync narazí na ověření, otevře se WebView, kde kontrolu
   dokončíš ručně; výsledné cookies a User-Agent se pak znovu použijí. Žádné automatické
   obcházení ochrany.
@@ -76,7 +85,8 @@ app/src/main/java/cz/foxxo/fafeed/
 │   ├── Prefs.kt          # cookies, uživatel, přepínače, cache, jazyk
 │   └── SecureStorage.kt  # šifrované cookies + migrace z plaintextu
 └── ui/
-    ├── AppRoot.kt        # login / feed / detail
+    ├── AppRoot.kt        # login / feed / detail / profil + deep linky
+    ├── DeepLinks.kt      # parser https://www.furaffinity.net/view|/user
     ├── AppLocale.kt      # přepnutí jazyka v appce
     ├── LoginScreen.kt    # WebView login + ověření cookies
     ├── ChallengeScreen.kt # ruční Cloudflare kontrola + předání cookies
@@ -102,7 +112,7 @@ Parsování stojí na marku FA: `figure[id^=sid-]` s `figcaption`, rating v clas
 
 ```bash
 ./gradlew :app:assembleDebug      # JDK 17+, AGP 9.5.1, Gradle 9.7.1, compileSdk 36
-./gradlew :app:testDebugUnitTest  # 30 unit testů: parser, feed, cookies, aktualizace
+./gradlew :app:testDebugUnitTest  # 34 unit testů: parser, feed, cookies, aktualizace, deep linky
 ./gradlew :app:assembleDebugAndroidTest  # Compose UI testy (ke spuštění potřebují zařízení)
 ./gradlew :app:assembleRelease            # R8-minifikovaný, podepsaný release klíčem
 ```
